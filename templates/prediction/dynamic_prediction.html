@@ -1,0 +1,525 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Scan QR Code - Alzheimer's Prediction System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .qr-scanner {
+        border: 2px solid #dee2e6;
+        border-radius: 15px;
+        overflow: hidden;
+        position: relative;
+        min-height: 350px;
+        background: #f8f9fa;
+        transition: all 0.3s ease;
+    }
+    .qr-scanner.active {
+        border-color: #28a745;
+        box-shadow: 0 0 0 3px rgba(40,167,69,0.2);
+    }
+    .scanner-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0,0,0,0.7);
+        color: white;
+        z-index: 10;
+        transition: all 0.3s ease;
+    }
+    .scanner-area {
+        position: relative;
+        min-height: 350px;
+        background: #000;
+    }
+    .scanner-frame {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 280px;
+        height: 280px;
+        border: 3px solid #00ff00;
+        border-radius: 15px;
+        box-shadow: 0 0 0 9999px rgba(0,0,0,0.5);
+        animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+        0% { border-color: #00ff00; box-shadow: 0 0 0 9999px rgba(0,0,0,0.5); }
+        50% { border-color: #00ffaa; box-shadow: 0 0 0 9999px rgba(0,0,0,0.6); }
+        100% { border-color: #00ff00; box-shadow: 0 0 0 9999px rgba(0,0,0,0.5); }
+    }
+    .result-card {
+        background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+        border-radius: 15px;
+        padding: 20px;
+    }
+    .stage-badge {
+        font-size: 1.2rem;
+        padding: 10px 20px;
+        border-radius: 50px;
+        display: inline-block;
+    }
+    .stage-non_demented { background: #d4edda; color: #155724; }
+    .stage-very_mild { background: #d1ecf1; color: #0c5460; }
+    .stage-mild { background: #fff3cd; color: #856404; }
+    .stage-moderate { background: #f8d7da; color: #721c24; }
+    .confidence-circle {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: conic-gradient(#28a745 0deg, #e9ecef 0deg);
+        transition: all 0.5s ease;
+    }
+    .confidence-text {
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+    .upload-area {
+        border: 2px dashed #dee2e6;
+        border-radius: 10px;
+        padding: 20px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+        background: #f8f9fa;
+    }
+    .upload-area:hover {
+        border-color: #007bff;
+        background: #e9ecef;
+    }
+    .score-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid #e9ecef;
+    }
+    .score-bar {
+        width: 150px;
+        height: 8px;
+        background: #e9ecef;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    .score-fill {
+        height: 100%;
+        background: #667eea;
+        border-radius: 4px;
+    }
+    .preview-image {
+        max-width: 100%;
+        max-height: 200px;
+        border-radius: 10px;
+        object-fit: cover;
+    }
+    @media (max-width: 768px) {
+        .scanner-frame {
+            width: 200px;
+            height: 200px;
+        }
+        .confidence-circle {
+            width: 80px;
+            height: 80px;
+        }
+        .confidence-text {
+            font-size: 1rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block page_header %}
+<div class="page-header bg-gradient-info text-white py-4">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="display-5 fw-bold mb-2">Scan QR Code</h1>
+                <p class="lead mb-0">Scan QR code to view Alzheimer's disease prediction results</p>
+            </div>
+            <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                <a href="/prediction/generate/" class="btn btn-outline-light">
+                    <i class="fas fa-qrcode me-2"></i>Generate QR Code
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-qrcode me-2 text-primary"></i>
+                        Scan QR Code
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="qr-scanner" id="qrScanner">
+                        <div class="scanner-area">
+                            <video id="preview" style="width: 100%; height: auto; background: #000;"></video>
+                            <div class="scanner-overlay" id="scannerOverlay">
+                                <div class="text-center">
+                                    <i class="fas fa-camera fa-3x mb-2"></i>
+                                    <p>Position QR code in frame</p>
+                                    <button class="btn btn-primary" id="startScanner">
+                                        <i class="fas fa-play me-2"></i>Start Camera
+                                    </button>
+                                    <button class="btn btn-secondary" id="stopScanner" style="display: none;">
+                                        <i class="fas fa-stop me-2"></i>Stop Camera
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="scanner-frame d-none" id="scannerFrame"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 text-center">
+                        <p class="text-muted">or</p>
+                        <div class="upload-area" id="uploadArea">
+                            <i class="fas fa-cloud-upload-alt fa-2x text-muted mb-2"></i>
+                            <p class="mb-0">Click to upload QR code image</p>
+                            <small class="text-muted">JPG, JPEG, PNG (Max 10MB)</small>
+                            <input type="file" id="qrImageUpload" accept="image/*" style="display: none;">
+                        </div>
+                        <div id="uploadProgress" style="display: none;" class="mt-2">
+                            <div class="progress">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%">Processing...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-line me-2 text-success"></i>
+                        Prediction Result
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="resultArea" style="display: none;"></div>
+                    <div id="noResultArea" class="text-center py-5">
+                        <i class="fas fa-qrcode fa-4x text-muted mb-3"></i>
+                        <p class="text-muted">No QR code scanned yet.<br>Scan a QR code to view prediction results.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/instascan@1.0.0/instascan.min.js"></script>
+<script>
+    let scanner = null;
+    let isScanning = false;
+    const video = document.getElementById('preview');
+    const startBtn = document.getElementById('startScanner');
+    const stopBtn = document.getElementById('stopScanner');
+    const scannerOverlay = document.getElementById('scannerOverlay');
+    const scannerFrame = document.getElementById('scannerFrame');
+    const resultArea = document.getElementById('resultArea');
+    const noResultArea = document.getElementById('noResultArea');
+    const qrScanner = document.getElementById('qrScanner');
+    const uploadArea = document.getElementById('uploadArea');
+    const qrImageUpload = document.getElementById('qrImageUpload');
+    const uploadProgress = document.getElementById('uploadProgress');
+    
+    // Get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    const csrftoken = getCookie('csrftoken');
+    
+    // Display prediction result
+    function displayResult(data) {
+        resultArea.style.display = 'block';
+        noResultArea.style.display = 'none';
+        
+        if (data.error) {
+            resultArea.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    <strong>Error:</strong> ${data.error}
+                </div>
+                <button class="btn btn-outline-primary mt-3" onclick="location.reload()">
+                    <i class="fas fa-redo me-2"></i>Try Again
+                </button>
+            `;
+            return;
+        }
+        
+        if (data.stage && data.confidence) {
+            const confidence = data.confidence;
+            const confidenceColor = confidence >= 85 ? 'success' : (confidence >= 70 ? 'warning' : 'danger');
+            const stageClass = data.stage;
+            const stageName = data.stage_display || data.stage.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            
+            // Build confidence scores HTML
+            let scoresHtml = '';
+            if (data.confidence_scores) {
+                scoresHtml = '<div class="mt-3"><h6>Confidence Distribution:</h6>';
+                for (const [stage, score] of Object.entries(data.confidence_scores)) {
+                    scoresHtml += `
+                        <div class="score-item">
+                            <span>${stage.replace(/_/g, ' ')}</span>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div class="score-bar">
+                                    <div class="score-fill" style="width: ${score}%; background: ${confidence >= 70 ? '#28a745' : (confidence >= 50 ? '#ffc107' : '#dc3545')};"></div>
+                                </div>
+                                <span class="fw-bold">${score.toFixed(1)}%</span>
+                            </div>
+                        </div>
+                    `;
+                }
+                scoresHtml += '</div>';
+            }
+            
+            resultArea.innerHTML = `
+                <div class="result-card">
+                    <div class="text-center">
+                        <div class="mb-4">
+                            <span class="stage-badge stage-${stageClass}">
+                                <i class="fas ${stageClass === 'non_demented' ? 'fa-smile' : (stageClass === 'very_mild' ? 'fa-meh' : (stageClass === 'mild' ? 'fa-frown' : 'fa-sad-tear'))} me-2"></i>
+                                ${stageName}
+                            </span>
+                        </div>
+                        <div class="confidence-circle" id="confidenceCircle"></div>
+                        <div class="mt-2">
+                            <h3 class="confidence-text text-${confidenceColor}">${confidence.toFixed(1)}%</h3>
+                            <small class="text-muted">Confidence Score</small>
+                        </div>
+                        ${scoresHtml}
+                        <div class="row mt-4">
+                            <div class="col-6">
+                                <div class="border rounded p-3 bg-light">
+                                    <small class="text-muted d-block">Prediction ID</small>
+                                    <strong>#${data.id}</strong>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="border rounded p-3 bg-light">
+                                    <small class="text-muted d-block">Date</small>
+                                    <strong>${data.date ? new Date(data.date).toLocaleDateString() : 'N/A'}</strong>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <a href="/prediction/static/result/${data.id}/" class="btn btn-primary">
+                                <i class="fas fa-eye me-2"></i>View Full Details
+                            </a>
+                        </div>
+                        <button class="btn btn-outline-secondary mt-2" onclick="location.reload()">
+                            <i class="fas fa-qrcode me-2"></i>Scan Another QR Code
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            // Animate confidence circle
+            const circle = document.getElementById('confidenceCircle');
+            if (circle) {
+                const gradient = `conic-gradient(#28a745 0deg ${confidence * 3.6}deg, #e9ecef ${confidence * 3.6}deg 360deg)`;
+                circle.style.background = gradient;
+            }
+        } else {
+            resultArea.innerHTML = `
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>QR Code Data:</strong>
+                    <pre class="mt-2 mb-0 bg-light p-2 rounded" style="overflow-x: auto;"><code>${JSON.stringify(data, null, 2)}</code></pre>
+                </div>
+                <button class="btn btn-outline-primary mt-3" onclick="location.reload()">
+                    <i class="fas fa-redo me-2"></i>Scan Again
+                </button>
+            `;
+        }
+    }
+    
+    // Process QR code data
+    function processQRCode(data) {
+        resultArea.style.display = 'block';
+        noResultArea.style.display = 'none';
+        resultArea.innerHTML = `
+            <div class="text-center">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="mt-2">Processing QR code...</p>
+            </div>
+        `;
+        
+        if (data.id) {
+            // Fetch full prediction details
+            fetch(`/api/prediction/${data.id}/`)
+                .then(response => response.json())
+                .then(prediction => {
+                    displayResult(prediction);
+                })
+                .catch(error => {
+                    displayResult(data);
+                });
+        } else {
+            displayResult(data);
+        }
+    }
+    
+    // Start scanner
+    startBtn.addEventListener('click', async function() {
+        scannerOverlay.style.display = 'none';
+        scannerFrame.classList.remove('d-none');
+        qrScanner.classList.add('active');
+        startBtn.style.display = 'none';
+        stopBtn.style.display = 'inline-block';
+        
+        const script = document.createElement('script');
+        script.src = 'https://unpkg.com/instascan@1.0.0/instascan.min.js';
+        script.onload = async function() {
+            scanner = new Instascan.Scanner({ video: video });
+            scanner.addListener('scan', function(content) {
+                try {
+                    const data = JSON.parse(content);
+                    processQRCode(data);
+                    stopScanner();
+                } catch (e) {
+                    displayResult({ error: 'Invalid QR code format' });
+                }
+            });
+            
+            try {
+                const cameras = await Instascan.Camera.getCameras();
+                if (cameras.length > 0) {
+                    await scanner.start(cameras[0]);
+                    isScanning = true;
+                } else {
+                    throw new Error('No cameras found');
+                }
+            } catch (e) {
+                scannerOverlay.style.display = 'flex';
+                scannerFrame.classList.add('d-none');
+                startBtn.style.display = 'inline-block';
+                stopBtn.style.display = 'none';
+                scannerOverlay.innerHTML = `
+                    <div class="text-center text-danger">
+                        <i class="fas fa-exclamation-triangle fa-3x mb-2"></i>
+                        <p>Camera access denied or not available</p>
+                        <p class="small">Please use image upload instead</p>
+                    </div>
+                `;
+            }
+        };
+        document.head.appendChild(script);
+    });
+    
+    // Stop scanner
+    function stopScanner() {
+        if (scanner && isScanning) {
+            scanner.stop();
+            isScanning = false;
+            scannerFrame.classList.add('d-none');
+            scannerOverlay.style.display = 'flex';
+            qrScanner.classList.remove('active');
+            startBtn.style.display = 'inline-block';
+            stopBtn.style.display = 'none';
+            scannerOverlay.innerHTML = `
+                <div class="text-center">
+                    <i class="fas fa-camera fa-3x mb-2"></i>
+                    <p>Position QR code in frame</p>
+                    <button class="btn btn-primary" id="startScanner">
+                        <i class="fas fa-play me-2"></i>Start Camera
+                    </button>
+                </div>
+            `;
+        }
+    }
+    
+    if (stopBtn) {
+        stopBtn.addEventListener('click', stopScanner);
+    }
+    
+    // Upload area click
+    uploadArea.addEventListener('click', function() {
+        qrImageUpload.click();
+    });
+    
+    // File input change
+    qrImageUpload.addEventListener('change', function(e) {
+        if (e.target.files.length > 0) {
+            uploadQRCode(e.target.files[0]);
+        }
+    });
+    
+    // Upload QR code function
+    function uploadQRCode(file) {
+        const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+        if (!validTypes.includes(file.type)) {
+            alert('Please upload a valid image file (JPG, JPEG, PNG)');
+            return;
+        }
+        
+        if (file.size > 10 * 1024 * 1024) {
+            alert('File size exceeds 10MB limit');
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('qr_image', file);
+        
+        resultArea.style.display = 'block';
+        noResultArea.style.display = 'none';
+        uploadProgress.style.display = 'block';
+        resultArea.innerHTML = `
+            <div class="text-center">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="mt-2">Processing QR code...</p>
+            </div>
+        `;
+        
+        fetch('/prediction/dynamic/scan/', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': csrftoken
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            uploadProgress.style.display = 'none';
+            if (data.success && data.data) {
+                displayResult(data.data);
+            } else {
+                displayResult({ error: data.error || 'Failed to scan QR code' });
+            }
+        })
+        .catch(error => {
+            uploadProgress.style.display = 'none';
+            displayResult({ error: 'Network error. Please try again.' });
+        });
+    }
+</script>
+{% endblock %}

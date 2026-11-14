@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block title %}Train Model{% endblock %}
+
+{% block page_header %}
+<div class="page-header bg-primary text-white py-4">
+    <div class="container">
+        <h1 class="display-5 fw-bold mb-2">Train a Model</h1>
+        <p class="lead mb-0">Train and evaluate a model using a prepared dataset.</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="alert alert-warning">
+        Training may take a long time and use substantial memory. The selected dataset is augmented, so validation
+        results may be optimistic. Do not use predictions for medical decisions.
+    </div>
+    <form method="post" class="card">
+        {% csrf_token %}
+        <div class="card-body">
+            {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+            {% for field in form %}
+            <div class="mb-3">
+                <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+        <div class="card-footer">
+            <button type="submit" class="btn btn-primary">Start training</button>
+            <a href="{% url 'prediction:model_list' %}" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

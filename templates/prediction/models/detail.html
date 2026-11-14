@@ -1,0 +1,358 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ model.name }} - Model Details{% endblock %}
+
+{% block extra_css %}
+<style>
+    .metric-card {
+        text-align: center;
+        padding: 20px;
+        border-radius: 10px;
+        background: #f8f9fa;
+        transition: transform 0.2s;
+    }
+    .metric-card:hover {
+        transform: translateY(-5px);
+    }
+    .metric-value {
+        font-size: 2rem;
+        font-weight: bold;
+    }
+    .confusion-matrix {
+        max-width: 100%;
+        overflow-x: auto;
+    }
+</style>
+{% endblock %}
+
+{% block page_header %}
+<div class="page-header bg-primary text-white py-4">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="display-5 fw-bold mb-2">{{ model.name }}</h1>
+                <p class="lead mb-0">{{ model.get_model_type_display }}</p>
+            </div>
+            <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                <a href="{% url 'prediction:model_list' %}" class="btn btn-outline-light">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Models
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    {% if model.error_message %}
+    <div class="alert alert-danger" role="alert">
+        <strong>Training failed:</strong> {{ model.error_message }}
+    </div>
+    {% elif model.status == 'training' %}
+    <div class="alert alert-info" role="status">
+        Training is in progress. Metrics will appear when training and test evaluation finish.
+    </div>
+    {% endif %}
+    <div class="row">
+        <!-- Model Info -->
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Model Information</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tr>
+                            <th>ID:</th>
+                            <td>{{ model.id }}</td>
+                        </tr>
+                        <tr>
+                            <th>Status:</th>
+                            <td>
+                                {% if model.status == 'completed' %}
+                                    <span class="badge bg-success">Completed</span>
+                                {% elif model.status == 'training' %}
+                                    <span class="badge bg-warning">Training</span>
+                                {% else %}
+                                    <span class="badge bg-danger">{{ model.get_status_display }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Model Type:</th>
+                            <td>{{ model.get_model_type_display }}</td>
+                        </tr>
+                        <tr>
+                            <th>Dataset:</th>
+                            <td>{{ model.dataset.name|default:"N/A" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Created:</th>
+                            <td>{{ model.created_at|date:"F j, Y, g:i a" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Training Time:</th>
+                            <td>{% if model.training_time %}{{ model.training_time|floatformat:1 }} seconds{% else %}N/A{% endif %}</td>
+                        </tr>
+                        <tr>
+                            <th>Active:</th>
+                            <td>
+                                {% if model.is_active %}
+                                    <span class="badge bg-success">Yes</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">No</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Performance Metrics -->
+        <div class="col-md-8 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Performance Metrics</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-6 col-md-3 mb-3">
+                            <div class="metric-card">
+                                <div class="metric-value text-primary">{{ model.accuracy|floatformat:1 }}%</div>
+                                <div>Accuracy</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3 mb-3">
+                            <div class="metric-card">
+                                <div class="metric-value text-success">{{ model.precision|floatformat:1 }}%</div>
+                                <div>Precision</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3 mb-3">
+                            <div class="metric-card">
+                                <div class="metric-value text-info">{{ model.recall|floatformat:1 }}%</div>
+                                <div>Recall</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3 mb-3">
+                            <div class="metric-card">
+                                <div class="metric-value text-warning">{{ model.f1_score|floatformat:1 }}%</div>
+                                <div>F1 Score</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if model.auc_score %}
+                    <div class="mt-3">
+                        <label>AUC Score: {{ model.auc_score|floatformat:3 }}</label>
+                        <div class="progress">
+                            <div class="progress-bar bg-info" style="width: {{ model.auc_score|floatformat:2 }}%"></div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Confusion Matrix -->
+        {% if model.confusion_matrix %}
+        <div class="col-12 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Confusion Matrix</h5>
+                </div>
+                <div class="card-body">
+                    <div class="confusion-matrix">
+                        <canvas id="confusionMatrix" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Per-Class Metrics -->
+        {% if model.per_class_metrics %}
+        <div class="col-12 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Per-Class Performance</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Class</th>
+                                    <th>Precision</th>
+                                    <th>Recall</th>
+                                    <th>F1 Score</th>
+                                    <th>Support</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for class, metrics in model.per_class_metrics.items %}
+                                <tr>
+                                    <td>{{ class|title }}</td>
+                                    <td>{{ metrics.precision|floatformat:1 }}%</td>
+                                    <td>{{ metrics.recall|floatformat:1 }}%</td>
+                                    <td>{{ metrics.f1_score|floatformat:1 }}%</td>
+                                    <td>{{ metrics.support }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Training History Chart -->
+        {% if model.training_history %}
+        <div class="col-12 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Training History</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="trainingChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Actions -->
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'prediction:download_model' model.id %}" class="btn btn-primary">
+                            <i class="fas fa-download me-2"></i>Download Model
+                        </a>
+                        {% if not model.is_active and model.status == 'completed' %}
+                        <button onclick="activateModel({{ model.id }})" class="btn btn-success">
+                            <i class="fas fa-check-circle me-2"></i>Activate Model
+                        </button>
+                        {% endif %}
+                        <a href="{% url 'prediction:compare_model' model.id %}" class="btn btn-info">
+                            <i class="fas fa-chart-line me-2"></i>Compare
+                        </a>
+                        <a href="{% url 'prediction:model_delete' model.id %}" class="btn btn-danger" onclick="return confirm('Are you sure?')">
+                            <i class="fas fa-trash me-2"></i>Delete
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+{% if model.confusion_matrix %}
+// Confusion Matrix Chart
+const cm = {{ model.confusion_matrix|safe }};
+const classNames = ['Non-Demented', 'Very Mild', 'Mild', 'Moderate'];
+
+new Chart(document.getElementById('confusionMatrix'), {
+    type: 'matrix',
+    data: {
+        datasets: [{
+            label: 'Confusion Matrix',
+            data: cm.flatMap((row, i) => row.map((val, j) => ({x: j, y: i, v: val}))),
+            backgroundColor: function(context) {
+                const value = context.dataset.data[context.dataIndex].v;
+                const max = Math.max(...cm.flat());
+                const intensity = value / max;
+                return `rgba(0, 123, 255, ${intensity})`;
+            }
+        }]
+    },
+    options: {
+        scales: {
+            x: { ticks: { callback: (val) => classNames[val], stepSize: 1 } },
+            y: { ticks: { callback: (val) => classNames[val], stepSize: 1 } }
+        },
+        plugins: {
+            tooltip: { callbacks: { label: (ctx) => `Count: ${ctx.dataset.data[ctx.dataIndex].v}` } }
+        }
+    }
+});
+{% endif %}
+
+{% if model.training_history %}
+// Training History Chart
+const history = {{ model.training_history|safe }};
+const epochs = Array.from({length: history.accuracy.length}, (_, i) => i + 1);
+
+new Chart(document.getElementById('trainingChart'), {
+    type: 'line',
+    data: {
+        labels: epochs,
+        datasets: [
+            {
+                label: 'Training Accuracy',
+                data: history.accuracy,
+                borderColor: '#28a745',
+                backgroundColor: 'rgba(40,167,69,0.1)',
+                fill: true
+            },
+            {
+                label: 'Validation Accuracy',
+                data: history.val_accuracy,
+                borderColor: '#007bff',
+                backgroundColor: 'rgba(0,123,255,0.1)',
+                fill: true
+            },
+            {
+                label: 'Training Loss',
+                data: history.loss,
+                borderColor: '#dc3545',
+                backgroundColor: 'rgba(220,53,69,0.1)',
+                fill: true,
+                yAxisID: 'y1'
+            },
+            {
+                label: 'Validation Loss',
+                data: history.val_loss,
+                borderColor: '#ffc107',
+                backgroundColor: 'rgba(255,193,7,0.1)',
+                fill: true,
+                yAxisID: 'y1'
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: { title: { display: true, text: 'Accuracy (%)' }, min: 0, max: 1 },
+            y1: { position: 'right', title: { display: true, text: 'Loss' }, grid: { drawOnChartArea: false } }
+        }
+    }
+});
+{% endif %}
+
+function activateModel(modelId) {
+    fetch(`/prediction/models/${modelId}/activate/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    }).then(response => response.json())
+      .then(data => {
+          if (data.success) {
+              location.reload();
+          } else {
+              alert('Failed to activate model');
+          }
+      });
+}
+</script>
+{% endblock %}

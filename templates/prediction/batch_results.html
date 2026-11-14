@@ -1,0 +1,271 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Batch Results - {{ batch.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .result-card {
+        transition: transform 0.2s;
+        border: none;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+    .result-card:hover {
+        transform: translateY(-5px);
+    }
+    .stage-badge {
+        font-size: 0.8rem;
+        padding: 5px 10px;
+    }
+    .confidence-bar {
+        height: 6px;
+        border-radius: 3px;
+    }
+    .summary-stat {
+        text-align: center;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block page_header %}
+<div class="page-header bg-success text-white py-4">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="display-5 fw-bold mb-2">Batch Results</h1>
+                <p class="lead mb-0">{{ batch.name }}</p>
+            </div>
+            <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                <a href="{% url 'prediction:batch_detail' batch.id %}" class="btn btn-outline-light">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Batch
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Summary Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="summary-stat">
+                <i class="fas fa-images fa-2x text-primary mb-2"></i>
+                <h3 class="mb-0">{{ batch.total_images }}</h3>
+                <small>Total Images</small>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="summary-stat">
+                <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                <h3 class="mb-0">{{ batch.processed_images }}</h3>
+                <small>Processed</small>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="summary-stat">
+                <i class="fas fa-chart-line fa-2x text-info mb-2"></i>
+                <h3 class="mb-0">{{ average_confidence|floatformat:1 }}%</h3>
+                <small>Avg Confidence</small>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="summary-stat">
+                <i class="fas fa-clock fa-2x text-warning mb-2"></i>
+                <h3 class="mb-0">{{ batch.processing_time|floatformat:1 }}s</h3>
+                <small>Total Time</small>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Stage Distribution -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-pie me-2 text-primary"></i>
+                        Stage Distribution
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="stageChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-bar me-2 text-success"></i>
+                        Confidence Distribution
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="confidenceChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Results Table -->
+    <div class="card">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="fas fa-table me-2 text-info"></i>
+                Detailed Results
+            </h5>
+            <a href="{% url 'prediction:download_batch_results' batch.id %}" class="btn btn-sm btn-success">
+                <i class="fas fa-download me-2"></i>Download CSV
+            </a>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Filename</th>
+                            <th>Predicted Stage</th>
+                            <th>Confidence</th>
+                            <th>Confidence Scores</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for result in results %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>
+                                <i class="fas fa-file-image me-2 text-muted"></i>
+                                {{ result.filename|truncatechars:40 }}
+                            </td>
+                            <td>
+                                <span class="badge stage-badge bg-{{ result.stage|default:'secondary' }}">
+                                    {{ result.stage|default:"Failed"|title }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <span class="me-2">{{ result.confidence|floatformat:1 }}%</span>
+                                    <div class="progress confidence-bar flex-grow-1">
+                                        <div class="progress-bar bg-{{ result.confidence|yesno:'success,warning,danger' }}" 
+                                             style="width: {{ result.confidence }}%"></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {% if result.probabilities %}
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                                        View Scores
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        {% for stage, score in result.probabilities.items %}
+                                        <li class="dropdown-item">
+                                            {{ stage|title }}: {{ score|floatformat:1 }}%
+                                        </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                                {% else %}
+                                <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Export Options -->
+    <div class="row mt-4">
+        <div class="col-12 text-center">
+            <a href="{% url 'prediction:batch_detail' batch.id %}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Batch
+            </a>
+            <button class="btn btn-primary ms-2" onclick="window.print()">
+                <i class="fas fa-print me-2"></i>Print Report
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Stage Distribution Chart
+    const stageData = {{ stage_distribution|safe }};
+    new Chart(document.getElementById('stageChart'), {
+        type: 'pie',
+        data: {
+            labels: Object.keys(stageData).map(s => s.replace(/_/g, ' ').title()),
+            datasets: [{
+                data: Object.values(stageData),
+                backgroundColor: ['#28a745', '#17a2b8', '#ffc107', '#dc3545'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+    
+    // Confidence Distribution Chart
+    const confidenceLevels = {
+        'High (>85%)': 0,
+        'Medium (70-85%)': 0,
+        'Low (<70%)': 0
+    };
+    
+    {% for result in results %}
+        {% if result.confidence %}
+            {% if result.confidence > 85 %}
+                confidenceLevels['High (>85%)']++;
+            {% elif result.confidence > 70 %}
+                confidenceLevels['Medium (70-85%)']++;
+            {% else %}
+                confidenceLevels['Low (<70%)']++;
+            {% endif %}
+        {% endif %}
+    {% endfor %}
+    
+    new Chart(document.getElementById('confidenceChart'), {
+        type: 'bar',
+        data: {
+            labels: Object.keys(confidenceLevels),
+            datasets: [{
+                label: 'Number of Images',
+                data: Object.values(confidenceLevels),
+                backgroundColor: '#28a745',
+                borderRadius: 5
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Count'
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

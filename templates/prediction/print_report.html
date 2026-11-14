@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+
+{% block title %}Printable Prediction Report #{{ prediction.pk }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .report-sheet {
+        max-width: 900px;
+        margin: 0 auto;
+        background: #fff;
+        padding: 2rem;
+        border: 1px solid #dee2e6;
+        border-radius: .5rem;
+    }
+    .report-qr {
+        width: 180px;
+        height: 180px;
+        image-rendering: pixelated;
+    }
+    .report-mri {
+        max-width: 100%;
+        max-height: 360px;
+        object-fit: contain;
+    }
+    @media print {
+        body {
+            background: #fff !important;
+            padding-top: 0 !important;
+        }
+        nav,
+        .footer,
+        .no-print {
+            display: none !important;
+        }
+        .container {
+            max-width: none !important;
+            padding: 0 !important;
+        }
+        .report-sheet {
+            max-width: none;
+            border: 0;
+            border-radius: 0;
+            padding: 0;
+        }
+        .card {
+            break-inside: avoid;
+            box-shadow: none !important;
+        }
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block page_header %}
+<div class="page-header bg-primary text-white py-4 no-print">
+    <div class="container d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="h2 mb-1">Prediction Report</h1>
+            <p class="mb-0">Report #{{ prediction.pk }}</p>
+        </div>
+        <button type="button" class="btn btn-light" onclick="window.print()">
+            <i class="fas fa-print me-2"></i>Print Report
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <article class="report-sheet">
+        <header class="d-flex justify-content-between align-items-start border-bottom pb-3 mb-4">
+            <div>
+                <h1 class="h2">MRI Prediction Report</h1>
+                <p class="text-muted mb-0">Report #{{ prediction.pk }}</p>
+            </div>
+            <div class="text-end">
+                <strong>Date</strong><br>
+                {{ prediction.created_at|date:"F j, Y, g:i a" }}
+            </div>
+        </header>
+
+        <div class="row g-4">
+            <section class="col-md-7">
+                <div class="card">
+                    <div class="card-body">
+                        <h2 class="h5">Prediction result</h2>
+                        <p class="display-6">{{ prediction.get_predicted_stage_display }}</p>
+                        <p><strong>Model confidence:</strong> {{ prediction.confidence|floatformat:1 }}%</p>
+                        <p><strong>Model:</strong> {{ prediction.model.name|default:"Not recorded" }}</p>
+                        {% if prediction.processing_time %}
+                        <p><strong>Processing time:</strong> {{ prediction.processing_time|floatformat:2 }} seconds</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="card mt-3">
+                    <div class="card-body">
+                        <h2 class="h5">Confidence scores</h2>
+                        <table class="table table-sm mb-0">
+                            <tbody>
+                                {% for stage, score in prediction.confidence_scores.items %}
+                                <tr>
+                                    <th>{{ stage|title }}</th>
+                                    <td class="text-end">{{ score|floatformat:1 }}%</td>
+                                </tr>
+                                {% empty %}
+                                <tr><td>No per-class scores were saved.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section class="col-md-5 text-center">
+                <div class="card">
+                    <div class="card-body">
+                        <h2 class="h5">Original MRI image</h2>
+                        {% if prediction.image %}
+                        <img src="{{ prediction.image.url }}" alt="Uploaded MRI image" class="report-mri">
+                        {% else %}
+                        <p class="text-muted">No image is attached to this report.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <section class="row mt-4 align-items-center">
+            <div class="col-md-8">
+                <h2 class="h5">Open this report</h2>
+                <p class="mb-1">Scan the QR code and sign in as the account that owns this prediction.</p>
+                <p class="text-muted small mb-0">The QR code does not contain prediction details. Other accounts cannot access this report.</p>
+            </div>
+            <div class="col-md-4 text-center">
+                {% if prediction.qr_code %}
+                <img src="{{ prediction.qr_code.url }}" alt="Login-protected report QR code" class="report-qr">
+                {% endif %}
+            </div>
+        </section>
+
+        <section class="border-top mt-4 pt-3">
+            <p class="small text-muted mb-0">
+                Research/educational output only. This automated result is not a medical diagnosis and should not be used
+                to make clinical decisions. Consult a qualified healthcare professional for medical advice.
+            </p>
+            <p class="small text-muted mt-2 mb-0">
+                This report contains sensitive health information. Store and share printed copies securely.
+            </p>
+        </section>
+
+        <div class="mt-4 no-print">
+            <a class="btn btn-outline-secondary" href="{% url 'prediction:history_detail' prediction.pk %}">Back to prediction</a>
+            <button type="button" class="btn btn-primary" onclick="window.print()">
+                <i class="fas fa-print me-2"></i>Print Report
+            </button>
+        </div>
+    </article>
+</div>
+{% endblock %}

@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Prediction Result - Alzheimer's Prediction System</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .image-preview {
+            text-align: center;
+        }
+
+        .uploaded-image {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .stage-badge {
+            font-size: 1.8rem;
+            font-weight: bold;
+            text-align: center;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stage-non_demented {
+            background: #d4edda;
+            color: #155724;
+            border-left: 5px solid #28a745;
+        }
+
+        .stage-very_mild {
+            background: #d1ecf1;
+            color: #0c5460;
+            border-left: 5px solid #17a2b8;
+        }
+
+        .stage-mild {
+            background: #fff3cd;
+            color: #856404;
+            border-left: 5px solid #ffc107;
+        }
+
+        .stage-moderate {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 5px solid #dc3545;
+        }
+
+        .confidence-bar {
+            background: #e9ecef;
+            border-radius: 10px;
+            height: 40px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .confidence-fill {
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 15px;
+            color: white;
+            font-weight: bold;
+            transition: width 1s ease;
+        }
+
+        .confidence-scores {
+            margin-top: 20px;
+        }
+
+        .score-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .score-label {
+            font-weight: 500;
+        }
+
+        .score-value {
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .score-bar {
+            width: 150px;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .score-fill {
+            height: 100%;
+            background: #667eea;
+            border-radius: 4px;
+        }
+
+        .chart-container {
+            margin-top: 20px;
+            height: 300px;
+        }
+
+        .info-section {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .info-section h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .info-section p {
+            color: #555;
+            line-height: 1.6;
+        }
+
+        .recommendations {
+            margin-top: 15px;
+            padding-left: 20px;
+        }
+
+        .recommendations li {
+            margin-bottom: 8px;
+            color: #555;
+        }
+
+        .action-buttons {
+            margin-top: 30px;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: #667eea;
+            text-decoration: none;
+            text-align: center;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .report-qr {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .report-qr img {
+            width: 150px;
+            height: 150px;
+        }
+
+        @media print {
+            body {
+                padding: 0;
+                background: white;
+            }
+            .header {
+                color: #222;
+            }
+            .card {
+                box-shadow: none;
+                border: 1px solid #ccc;
+                break-inside: avoid;
+            }
+            .card:hover {
+                transform: none;
+            }
+            .action-buttons,
+            .back-link {
+                display: none !important;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .result-grid {
+                grid-template-columns: 1fr;
+            }
+            body {
+                padding: 20px;
+            }
+            .stage-badge {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧠 Alzheimer's Disease Prediction Result</h1>
+            <p>AI-powered analysis complete</p>
+        </div>
+
+        <div class="result-grid">
+            <!-- Left Column - Image and Stage -->
+            <div>
+                <div class="card">
+                    <h2>📷 Uploaded MRI Image</h2>
+                    <div class="image-preview">
+                        {% if image_data %}
+                            <img src="data:image/jpeg;base64,{{ image_data }}" alt="Uploaded MRI" class="uploaded-image">
+                        {% else %}
+                            <img src="{{ prediction.image.url }}" alt="Uploaded MRI" class="uploaded-image">
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="card" style="margin-top: 30px;">
+                    <h2>📊 Prediction Result</h2>
+                    <div class="stage-badge stage-{{ prediction.predicted_stage }}">
+                        🧠 {{ prediction.get_predicted_stage_display }}
+                    </div>
+                    
+                    <div>
+                        <p><strong>Confidence Score:</strong> {{ prediction.confidence|floatformat:1 }}%</p>
+                        <div class="confidence-bar">
+                            <div class="confidence-fill" style="width: {{ prediction.confidence }}%">
+                                {{ prediction.confidence|floatformat:1 }}%
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="confidence-scores">
+                        <h3>Confidence Distribution</h3>
+                        {% for stage, score in prediction.confidence_scores.items %}
+                        <div class="score-item">
+                            <span class="score-label">{{ stage|title }}</span>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div class="score-bar">
+                                    <div class="score-fill" style="width: {{ score }}%"></div>
+                                </div>
+                                <span class="score-value">{{ score|floatformat:1 }}%</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column - Chart and Information -->
+            <div>
+                <div class="card">
+                    <h2>📈 Confidence Chart</h2>
+                    <div class="chart-container">
+                        <canvas id="confidenceChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="card" style="margin-top: 30px;">
+                    <h2>ℹ️ About {{ prediction.get_predicted_stage_display }}</h2>
+                    <div class="info-section">
+                        <p>{{ stage_info.description }}</p>
+                        
+                        <h3 style="margin-top: 20px;">📋 Recommendations:</h3>
+                        <ul class="recommendations">
+                            {% for rec in stage_info.recommendations %}
+                                <li>{{ rec }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <a href="{% url 'prediction:print_report' prediction.id %}" class="btn btn-primary">🖨️ Print Report with QR</a>
+                    <a href="{% url 'prediction:static_prediction' %}" class="btn btn-primary">📤 New Prediction</a>
+                    <a href="{% url 'prediction:history' %}" class="btn btn-secondary">📜 View History</a>
+                </div>
+                
+                <div style="text-align: center; margin-top: 20px;">
+                    <a href="/" class="back-link">← Back to Home</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Render confidence chart
+        const ctx = document.getElementById('confidenceChart').getContext('2d');
+        const labels = {{ chart_data.labels|safe }};
+        const values = {{ chart_data.values|safe }};
+        
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Confidence Score (%)',
+                    data: values,
+                    backgroundColor: [
+                        '#28a745',
+                        '#17a2b8',
+                        '#ffc107',
+                        '#dc3545'
+                    ],
+                    borderRadius: 8,
+                    barPercentage: 0.6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.raw.toFixed(1)}% confidence`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        title: {
+                            display: true,
+                            text: 'Confidence (%)',
+                            font: { weight: 'bold' }
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Disease Stage',
+                            font: { weight: 'bold' }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

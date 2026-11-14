@@ -1,0 +1,243 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Preview - {{ dataset.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .preview-gallery {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 20px;
+    }
+    .preview-card {
+        position: relative;
+        overflow: hidden;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: transform 0.3s;
+    }
+    .preview-card:hover {
+        transform: scale(1.05);
+    }
+    .preview-card img {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+    }
+    .preview-overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+        padding: 10px;
+        color: white;
+        font-size: 0.85rem;
+    }
+    .category-section {
+        margin-bottom: 30px;
+    }
+    .category-title {
+        border-left: 4px solid #007bff;
+        padding-left: 15px;
+        margin-bottom: 20px;
+    }
+    .lightbox {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.9);
+        z-index: 9999;
+        justify-content: center;
+        align-items: center;
+    }
+    .lightbox.active {
+        display: flex;
+    }
+    .lightbox img {
+        max-width: 90%;
+        max-height: 90%;
+        object-fit: contain;
+    }
+    .lightbox-close {
+        position: absolute;
+        top: 20px;
+        right: 30px;
+        color: white;
+        font-size: 2rem;
+        cursor: pointer;
+    }
+    .lightbox-prev, .lightbox-next {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(255,255,255,0.3);
+        color: white;
+        padding: 15px;
+        cursor: pointer;
+        border-radius: 50%;
+        transition: background 0.3s;
+    }
+    .lightbox-prev:hover, .lightbox-next:hover {
+        background: rgba(255,255,255,0.5);
+    }
+    .lightbox-prev { left: 20px; }
+    .lightbox-next { right: 20px; }
+    .lightbox-info {
+        position: absolute;
+        bottom: 20px;
+        left: 0;
+        right: 0;
+        text-align: center;
+        color: white;
+        background: rgba(0,0,0,0.5);
+        padding: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block page_header %}
+<div class="page-header bg-dark text-white py-4">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="display-5 fw-bold mb-2">Dataset Preview</h1>
+                <p class="lead mb-0">{{ dataset.name }}</p>
+            </div>
+            <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                <a href="{% url 'dataset_manager:detail' dataset.id %}" class="btn btn-outline-light">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Details
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    {% if preview_images %}
+        {% for category_name, images in preview_images.items %}
+        <div class="category-section">
+            <div class="category-title">
+                <h3>{{ category_name }}</h3>
+                <p class="text-muted">{{ images|length }} images</p>
+            </div>
+            <div class="preview-gallery">
+                {% for image in images %}
+                <div class="preview-card" data-image="{{ image.file.url }}" data-category="{{ category_name }}" data-filename="{{ image.original_filename }}">
+                    <img src="{{ image.file.url }}" alt="{{ image.original_filename }}" loading="lazy">
+                    <div class="preview-overlay">
+                        <small>{{ image.original_filename|truncatechars:30 }}</small>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-images fa-4x text-muted mb-3"></i>
+            <h3>No Images Available</h3>
+            <p class="text-muted">This dataset doesn't have any processed images yet.</p>
+            {% if dataset.status == 'processing' %}
+            <div class="spinner-border text-primary mt-3" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Processing images...</p>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+
+<!-- Lightbox Modal -->
+<div class="lightbox" id="lightbox">
+    <span class="lightbox-close">&times;</span>
+    <span class="lightbox-prev">&lsaquo;</span>
+    <span class="lightbox-next">&rsaquo;</span>
+    <img id="lightbox-img" src="" alt="">
+    <div class="lightbox-info" id="lightbox-info"></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Lightbox functionality
+    let currentImageIndex = 0;
+    let allImages = [];
+    
+    function initLightbox() {
+        const previewCards = document.querySelectorAll('.preview-card');
+        allImages = Array.from(previewCards).map(card => ({
+            url: card.dataset.image,
+            category: card.dataset.category,
+            filename: card.dataset.filename
+        }));
+        
+        previewCards.forEach((card, index) => {
+            card.addEventListener('click', () => {
+                openLightbox(index);
+            });
+        });
+        
+        // Lightbox controls
+        const lightbox = document.getElementById('lightbox');
+        const closeBtn = document.querySelector('.lightbox-close');
+        const prevBtn = document.querySelector('.lightbox-prev');
+        const nextBtn = document.querySelector('.lightbox-next');
+        
+        closeBtn.addEventListener('click', closeLightbox);
+        prevBtn.addEventListener('click', () => navigateLightbox(-1));
+        nextBtn.addEventListener('click', () => navigateLightbox(1));
+        
+        lightbox.addEventListener('click', (e) => {
+            if (e.target === lightbox) closeLightbox();
+        });
+        
+        document.addEventListener('keydown', (e) => {
+            if (!lightbox.classList.contains('active')) return;
+            if (e.key === 'Escape') closeLightbox();
+            if (e.key === 'ArrowLeft') navigateLightbox(-1);
+            if (e.key === 'ArrowRight') navigateLightbox(1);
+        });
+    }
+    
+    function openLightbox(index) {
+        currentImageIndex = index;
+        const image = allImages[currentImageIndex];
+        const lightboxImg = document.getElementById('lightbox-img');
+        const lightboxInfo = document.getElementById('lightbox-info');
+        
+        lightboxImg.src = image.url;
+        lightboxInfo.innerHTML = `
+            <strong>${image.category}</strong> | 
+            ${image.filename}
+        `;
+        
+        document.getElementById('lightbox').classList.add('active');
+    }
+    
+    function closeLightbox() {
+        document.getElementById('lightbox').classList.remove('active');
+    }
+    
+    function navigateLightbox(direction) {
+        currentImageIndex = (currentImageIndex + direction + allImages.length) % allImages.length;
+        openLightbox(currentImageIndex);
+    }
+    
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', initLightbox);
+    
+    // Auto-refresh if processing
+    {% if dataset.status == 'processing' %}
+    setTimeout(function() {
+        location.reload();
+    }, 5000);
+    {% endif %}
+</script>
+{% endblock %}

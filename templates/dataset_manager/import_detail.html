@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ dataset.name }}{% endblock %}
+
+{% block page_header %}
+<div class="page-header bg-primary text-white py-4">
+    <div class="container">
+        <h1 class="display-5 fw-bold mb-2">{{ dataset.name }}</h1>
+        <p class="lead mb-0">{{ dataset.get_status_display }}</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    {% if dataset.status == 'processing' %}
+    <div class="alert alert-info">The ZIP is being validated and prepared. This page refreshes automatically.</div>
+    {% elif dataset.status == 'failed' %}
+    <div class="alert alert-danger"><strong>Import failed:</strong> {{ dataset.error_message }}</div>
+    {% elif dataset.status == 'ready' %}
+    <div class="alert alert-success">Dataset prepared and ready for training.</div>
+    {% endif %}
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <p>{{ dataset.description|default:"No description provided." }}</p>
+            <dl class="row mb-0">
+                <dt class="col-sm-3">Images</dt><dd class="col-sm-9">{{ dataset.total_images }}</dd>
+                <dt class="col-sm-3">Archive size</dt><dd class="col-sm-9">{{ dataset.get_formatted_size }}</dd>
+                <dt class="col-sm-3">Processing time</dt><dd class="col-sm-9">{{ dataset.processing_time|default:"Pending" }}{% if dataset.processing_time %} seconds{% endif %}</dd>
+            </dl>
+        </div>
+    </div>
+
+    {% if stage_distribution %}
+    <div class="card mb-4">
+        <div class="card-header">Images by class</div>
+        <ul class="list-group list-group-flush">
+            {% for stage, count in stage_distribution.items %}
+            <li class="list-group-item d-flex justify-content-between"><span>{{ stage|title }}</span><strong>{{ count }}</strong></li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    {% if active_split %}
+    <div class="card mb-4">
+        <div class="card-header">Prepared split</div>
+        <div class="card-body">
+            <p class="mb-1">Training: {{ active_split.train_count }} | Validation: {{ active_split.val_count }} | Test: {{ active_split.test_count }}</p>
+            <p class="text-muted mb-0">Validation is sampled from the augmented training portion. Near-duplicate images may make validation results optimistic.</p>
+        </div>
+    </div>
+    {% if test_class_counts.moderate and test_class_counts.moderate < 30 %}
+    <div class="alert alert-warning">The test split contains only {{ test_class_counts.moderate }} moderate images. Per-class evaluation for moderate dementia will be uncertain.</div>
+    {% endif %}
+    <a class="btn btn-primary" href="{% url 'prediction:train_model' %}?dataset={{ dataset.pk }}">Train a model on this dataset</a>
+    {% endif %}
+    <a class="btn btn-outline-secondary" href="{% url 'dataset_manager:list' %}">Back to datasets</a>
+</div>
+
+{% if dataset.status == 'processing' %}
+<script>window.setTimeout(function () { window.location.reload(); }, 5000);</script>
+{% endif %}
+{% endblock %}

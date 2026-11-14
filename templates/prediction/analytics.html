@@ -1,0 +1,220 @@
+{% extends 'base.html' %}
+
+{% block title %}Prediction Analytics{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <h1 class="h2 mb-1">Prediction Analytics</h1>
+            <p class="text-muted mb-0">Summary of your prediction history and model results</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'prediction:export_analytics' %}" class="btn btn-outline-primary">
+                <i class="fas fa-download me-2"></i>Export CSV
+            </a>
+            <a href="{% url 'prediction:history' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-history me-2"></i>History
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-xl-3">
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <i class="fas fa-chart-line fa-2x text-primary mb-2"></i>
+                    <h2 class="h3 mb-0">{{ total_predictions }}</h2>
+                    <span class="text-muted">Total Predictions</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <i class="fas fa-bullseye fa-2x text-success mb-2"></i>
+                    <h2 class="h3 mb-0">{{ avg_confidence|floatformat:1 }}%</h2>
+                    <span class="text-muted">Average Confidence</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <i class="fas fa-layer-group fa-2x text-info mb-2"></i>
+                    <h2 class="h3 mb-0">{{ stage_distribution|length }}</h2>
+                    <span class="text-muted">Stages Detected</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <i class="fas fa-brain fa-2x text-warning mb-2"></i>
+                    <h2 class="h3 mb-0">{{ model_stats|length }}</h2>
+                    <span class="text-muted">Models Used</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if total_predictions %}
+    <div class="row g-4 mb-4">
+        <div class="col-lg-5">
+            <div class="card h-100">
+                <div class="card-header bg-white">
+                    <h2 class="h5 mb-0">Stage Distribution</h2>
+                </div>
+                <div class="card-body">
+                    <canvas id="stageChart" aria-label="Prediction counts by stage" role="img"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-7">
+            <div class="card h-100">
+                <div class="card-header bg-white">
+                    <h2 class="h5 mb-0">Recent Prediction Confidence</h2>
+                </div>
+                <div class="card-body">
+                    <canvas id="confidenceChart" aria-label="Confidence of recent predictions" role="img"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="card h-100">
+                <div class="card-header bg-white">
+                    <h2 class="h5 mb-0">Weekly Activity</h2>
+                </div>
+                <div class="card-body">
+                    <canvas id="weeklyChart" aria-label="Predictions per week" role="img"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="card h-100">
+                <div class="card-header bg-white">
+                    <h2 class="h5 mb-0">Model Performance</h2>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Model</th>
+                                    <th>Predictions</th>
+                                    <th>Avg. Confidence</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for model_stat in model_stats %}
+                                <tr>
+                                    <td>{{ model_stat.model__name|default:"Demo / unavailable" }}</td>
+                                    <td>{{ model_stat.count }}</td>
+                                    <td>{{ model_stat.avg_confidence|floatformat:1 }}%</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <i class="fas fa-chart-pie fa-3x text-muted mb-3"></i>
+            <h2 class="h4">No prediction data yet</h2>
+            <p class="text-muted">Run a prediction to populate your analytics dashboard.</p>
+            <a href="{% url 'prediction:static_prediction' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Make a Prediction
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{{ stage_distribution|json_script:"stage-distribution-data" }}
+{{ chart_labels|json_script:"confidence-labels-data" }}
+{{ chart_values|json_script:"confidence-values-data" }}
+{{ weekly_activity|json_script:"weekly-activity-data" }}
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const stageNames = {
+        non_demented: 'Non-Demented',
+        very_mild: 'Very Mild Demented',
+        mild: 'Mild Demented',
+        moderate: 'Moderate Demented'
+    };
+    const stageColors = ['#28a745', '#17a2b8', '#ffc107', '#dc3545'];
+    const stageData = JSON.parse(document.getElementById('stage-distribution-data').textContent);
+    const confidenceLabels = JSON.parse(document.getElementById('confidence-labels-data').textContent);
+    const confidenceValues = JSON.parse(document.getElementById('confidence-values-data').textContent);
+    const weeklyActivity = JSON.parse(document.getElementById('weekly-activity-data').textContent).reverse();
+
+    if (document.getElementById('stageChart')) {
+        new Chart(document.getElementById('stageChart'), {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(stageData).map(stage => stageNames[stage] || stage),
+                datasets: [{
+                    data: Object.values(stageData),
+                    backgroundColor: stageColors,
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { position: 'bottom' } }
+            }
+        });
+    }
+
+    if (document.getElementById('confidenceChart')) {
+        new Chart(document.getElementById('confidenceChart'), {
+            type: 'line',
+            data: {
+                labels: confidenceLabels,
+                datasets: [{
+                    label: 'Confidence (%)',
+                    data: confidenceValues,
+                    borderColor: '#667eea',
+                    backgroundColor: 'rgba(102, 126, 234, 0.15)',
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: { y: { beginAtZero: true, max: 100 } }
+            }
+        });
+    }
+
+    if (document.getElementById('weeklyChart')) {
+        new Chart(document.getElementById('weeklyChart'), {
+            type: 'bar',
+            data: {
+                labels: weeklyActivity.map(week => week.week),
+                datasets: [{
+                    label: 'Predictions',
+                    data: weeklyActivity.map(week => week.count),
+                    backgroundColor: '#17a2b8',
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
+</script>
+{% endblock %}

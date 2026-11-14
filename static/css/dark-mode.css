@@ -1,0 +1,412 @@
+/* Dark Mode Theme for Alzheimer's Disease Prediction System */
+/* Comprehensive dark mode styling with smooth transitions */
+
+/* Root Variables for Dark Mode */
+:root {
+    --dark-bg-primary: #1a1a2e;
+    --dark-bg-secondary: #16213e;
+    --dark-bg-tertiary: #0f0f1f;
+    --dark-text-primary: #ffffff;
+    --dark-text-secondary: #b8b8b8;
+    --dark-text-muted: #6c757d;
+    --dark-border: #2c2c3a;
+    --dark-card-bg: #1e1e2f;
+    --dark-input-bg: #2c2c3a;
+    --dark-input-border: #3a3a4a;
+    --dark-hover: #2c2c3a;
+    --dark-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+/* Base Dark Mode Styles */
+body.dark-mode {
+    background-color: var(--dark-bg-primary);
+    color: var(--dark-text-secondary);
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Typography */
+body.dark-mode h1,
+body.dark-mode h2,
+body.dark-mode h3,
+body.dark-mode h4,
+body.dark-mode h5,
+body.dark-mode h6 {
+    color: var(--dark-text-primary);
+}
+
+body.dark-mode .text-muted {
+    color: var(--dark-text-muted) !important;
+}
+
+/* Navigation Bar */
+body.dark-mode .navbar {
+    background-color: var(--dark-bg-secondary) !important;
+    border-bottom: 1px solid var(--dark-border);
+}
+
+body.dark-mode .navbar-brand,
+body.dark-mode .nav-link {
+    color: var(--dark-text-secondary) !important;
+}
+
+body.dark-mode .nav-link:hover,
+body.dark-mode .nav-link.active {
+    color: var(--dark-text-primary) !important;
+    background-color: var(--dark-hover);
+}
+
+body.dark-mode .dropdown-menu {
+    background-color: var(--dark-bg-secondary);
+    border-color: var(--dark-border);
+}
+
+body.dark-mode .dropdown-item {
+    color: var(--dark-text-secondary);
+}
+
+body.dark-mode .dropdown-item:hover {
+    background-color: var(--dark-hover);
+    color: var(--dark-text-primary);
+}
+
+/* Sidebar */
+body.dark-mode .sidebar {
+    background-color: var(--dark-bg-secondary);
+    border-right-color: var(--dark-border);
+}
+
+body.dark-mode .sidebar .nav-link {
+    color: var(--dark-text-secondary);
+}
+
+body.dark-mode .sidebar .nav-link:hover,
+body.dark-mode .sidebar .nav-link.active {
+    background-color: var(--dark-hover);
+    color: var(--dark-text-primary);
+}
+
+body.dark-mode .sidebar .menu-title {
+    color: var(--dark-text-muted);
+}
+
+body.dark-mode .sidebar-footer {
+    border-top-color: var(--dark-border);
+}
+
+/* Cards */
+body.dark-mode .card {
+    background-color: var(--dark-card-bg);
+    border-color: var(--dark-border);
+    box-shadow: var(--dark-shadow);
+}
+
+body.dark-mode .card-header {
+    background-color: var(--dark-bg-tertiary);
+    border-bottom-color: var(--dark-border);
+}
+
+body.dark-mode .card-footer {
+    background-color: var(--dark-bg-tertiary);
+    border-top-color: var(--dark-border);
+}
+
+/* Tables */
+body.dark-mode .table {
+    color: var(--dark-text-secondary);
+}
+
+body.dark-mode .table thead th {
+    background-color: var(--dark-bg-tertiary);
+    border-bottom-color: var(--dark-border);
+    color: var(--dark-text-primary);
+}
+
+body.dark-mode .table td,
+body.dark-mode .table th {
+    border-top-color: var(--dark-border);
+}
+
+body.dark-mode .table-hover tbody tr:hover {
+    background-color: var(--dark-hover);
+}
+
+/* Forms */
+body.dark-mode .form-control,
+body.dark-mode .form-select {
+    background-color: var(--dark-input-bg);
+    border-color: var(--dark-input-border);
+    color: var(--dark-text-primary);
+}
+
+body.dark-mode .form-control:focus,
+body.dark-mode .form-select:focus {
+    background-color: var(--dark-input-bg);
+    border-color: var(--primary-color, #007bff);
+    color: var(--dark-text-primary);
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+body.dark-mode .form-control::placeholder {
+    color: var(--dark-text-muted);
+}
+
+body.dark-mode .input-group-text {
+    background-color: var(--dark-input-bg);
+    border-color: var(--dark-input-border);
+    color: var(--dark-text-secondary);
+}
+
+/* Buttons */
+body.dark-mode .btn-outline-primary {
+    border-color: var(--primary-color, #007bff);
+    color: var(--primary-color, #007bff);
+}
+
+body.dark-mode .btn-outline-primary:hover {
+    background-color: var(--primary-color, #007bff);
+    color: var(--dark-text-primary);
+}
+
+body.dark-mode .btn-outline-secondary {
+    border-color: var(--dark-text-muted);
+    color: var(--dark-text-secondary);
+}
+
+body.dark-mode .btn-outline-secondary:hover {
+    background-color: var(--dark-text-muted);
+    border-color: var(--dark-text-muted);
+    color: var(--dark-text-primary);
+}
+
+/* Alerts */
+body.dark-mode .alert-info {
+    background-color: #0c5460;
+    border-color: #0a4b56;
+    color: #d1ecf1;
+}
+
+body.dark-mode .alert-success {
+    background-color: #155724;
+    border-color: #124a1f;
+    color: #d4edda;
+}
+
+body.dark-mode .alert-warning {
+    background-color: #856404;
+    border-color: #725b00;
+    color: #fff3cd;
+}
+
+body.dark-mode .alert-danger {
+    background-color: #721c24;
+    border-color: #5a1a1f;
+    color: #f8d7da;
+}
+
+/* Progress Bars */
+body.dark-mode .progress {
+    background-color: var(--dark-input-bg);
+}
+
+/* Modal */
+body.dark-mode .modal-content {
+    background-color: var(--dark-card-bg);
+    border-color: var(--dark-border);
+}
+
+body.dark-mode .modal-header {
+    border-bottom-color: var(--dark-border);
+}
+
+body.dark-mode .modal-footer {
+    border-top-color: var(--dark-border);
+}
+
+/* Tabs */
+body.dark-mode .nav-tabs {
+    border-bottom-color: var(--dark-border);
+}
+
+body.dark-mode .nav-tabs .nav-link {
+    color: var(--dark-text-secondary);
+}
+
+body.dark-mode .nav-tabs .nav-link.active {
+    background-color: var(--dark-card-bg);
+    border-color: var(--dark-border);
+    border-bottom-color: var(--dark-card-bg);
+    color: var(--dark-text-primary);
+}
+
+/* Pagination */
+body.dark-mode .page-link {
+    background-color: var(--dark-card-bg);
+    border-color: var(--dark-border);
+    color: var(--dark-text-secondary);
+}
+
+body.dark-mode .page-link:hover {
+    background-color: var(--dark-hover);
+    color: var(--dark-text-primary);
+}
+
+body.dark-mode .page-item.active .page-link {
+    background-color: var(--primary-color, #007bff);
+    border-color: var(--primary-color, #007bff);
+    color: white;
+}
+
+/* Charts */
+body.dark-mode canvas {
+    filter: brightness(0.9);
+}
+
+/* Toast Notifications */
+body.dark-mode .toast {
+    background-color: var(--dark-card-bg);
+    border-color: var(--dark-border);
+}
+
+body.dark-mode .toast-header {
+    background-color: var(--dark-bg-tertiary);
+    border-bottom-color: var(--dark-border);
+    color: var(--dark-text-primary);
+}
+
+/* List Groups */
+body.dark-mode .list-group-item {
+    background-color: var(--dark-card-bg);
+    border-color: var(--dark-border);
+    color: var(--dark-text-secondary);
+}
+
+body.dark-mode .list-group-item:hover {
+    background-color: var(--dark-hover);
+}
+
+/* Badges */
+body.dark-mode .badge.bg-light {
+    background-color: var(--dark-input-bg) !important;
+    color: var(--dark-text-secondary);
+}
+
+/* Code Blocks */
+body.dark-mode pre,
+body.dark-mode code {
+    background-color: var(--dark-bg-tertiary);
+    color: var(--dark-text-secondary);
+    border-color: var(--dark-border);
+}
+
+/* Footer */
+body.dark-mode .footer {
+    background-color: var(--dark-bg-secondary);
+    border-top-color: var(--dark-border);
+}
+
+body.dark-mode .footer .text-muted {
+    color: var(--dark-text-muted) !important;
+}
+
+/* Upload Area */
+body.dark-mode .upload-area {
+    background-color: var(--dark-input-bg);
+    border-color: var(--dark-input-border);
+}
+
+body.dark-mode .upload-area:hover {
+    background-color: var(--dark-hover);
+}
+
+/* Scrollbar */
+body.dark-mode ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+body.dark-mode ::-webkit-scrollbar-track {
+    background: var(--dark-bg-tertiary);
+}
+
+body.dark-mode ::-webkit-scrollbar-thumb {
+    background: var(--dark-text-muted);
+    border-radius: 5px;
+}
+
+body.dark-mode ::-webkit-scrollbar-thumb:hover {
+    background: var(--dark-text-secondary);
+}
+
+/* Custom Scrollbar for Firefox */
+body.dark-mode {
+    scrollbar-width: thin;
+    scrollbar-color: var(--dark-text-muted) var(--dark-bg-tertiary);
+}
+
+/* Dark Mode Toggle Animation */
+#darkModeToggle i {
+    transition: transform 0.3s ease;
+}
+
+#darkModeToggle:hover i {
+    transform: rotate(30deg);
+}
+
+/* Markdown/Content Styles */
+body.dark-mode .markdown-body {
+    color: var(--dark-text-secondary);
+}
+
+body.dark-mode .markdown-body h1,
+body.dark-mode .markdown-body h2,
+body.dark-mode .markdown-body h3,
+body.dark-mode .markdown-body h4 {
+    color: var(--dark-text-primary);
+}
+
+body.dark-mode .markdown-body code {
+    background-color: var(--dark-bg-tertiary);
+}
+
+/* Transitions */
+body.dark-mode,
+body.dark-mode * {
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+/* Dark Mode Specific Overrides */
+body.dark-mode .bg-white {
+    background-color: var(--dark-card-bg) !important;
+}
+
+body.dark-mode .bg-light {
+    background-color: var(--dark-bg-tertiary) !important;
+}
+
+body.dark-mode .border {
+    border-color: var(--dark-border) !important;
+}
+
+body.dark-mode .shadow-sm {
+    box-shadow: var(--dark-shadow) !important;
+}
+
+/* Chart.js Dark Mode Adjustments */
+body.dark-mode .chartjs-render-monitor {
+    filter: brightness(0.9);
+}
+
+/* DataTables Dark Mode */
+body.dark-mode .dataTables_wrapper .dataTables_paginate .paginate_button {
+    color: var(--dark-text-secondary) !important;
+}
+
+body.dark-mode .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+    background-color: var(--dark-hover) !important;
+    color: var(--dark-text-primary) !important;
+}
+
+/* Loading Spinner */
+body.dark-mode .spinner-border {
+    color: var(--primary-color, #007bff);
+}

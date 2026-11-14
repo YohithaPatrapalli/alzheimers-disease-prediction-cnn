@@ -1,0 +1,321 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Statistics - {{ dataset.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stat-card {
+        transition: transform 0.2s;
+        cursor: pointer;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+    .stat-value {
+        font-size: 2rem;
+        font-weight: bold;
+    }
+    .metric-value {
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+    .info-box {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 10px;
+        padding: 20px;
+    }
+    .info-box h3 {
+        font-size: 2rem;
+        margin-bottom: 5px;
+    }
+</style>
+{% endblock %}
+
+{% block page_header %}
+<div class="page-header bg-info text-white py-4">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="display-5 fw-bold mb-2">Dataset Statistics</h1>
+                <p class="lead mb-0">{{ dataset.name }}</p>
+            </div>
+            <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                <a href="{% url 'dataset_manager:detail' dataset.id %}" class="btn btn-outline-light">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Dataset
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Overview Stats -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card text-center">
+                <div class="card-body">
+                    <i class="fas fa-images fa-3x text-primary mb-3"></i>
+                    <div class="stat-value">{{ stats.total_images }}</div>
+                    <p class="text-muted mb-0">Total Images</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card text-center">
+                <div class="card-body">
+                    <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                    <div class="stat-value">{{ stats.processed_images|default:stats.total_images }}</div>
+                    <p class="text-muted mb-0">Processed Images</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card text-center">
+                <div class="card-body">
+                    <i class="fas fa-chart-line fa-3x text-info mb-3"></i>
+                    <div class="stat-value">{{ stats.avg_confidence|default:"N/A" }}</div>
+                    <p class="text-muted mb-0">Avg Confidence %</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card text-center">
+                <div class="card-body">
+                    <i class="fas fa-database fa-3x text-warning mb-3"></i>
+                    <div class="stat-value">{{ stats.formatted_total_size }}</div>
+                    <p class="text-muted mb-0">Total Size</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Category Distribution Chart -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-pie me-2 text-primary"></i>
+                        Category Distribution
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="categoryChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Image Dimensions Stats -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-arrows-alt me-2 text-success"></i>
+                        Image Dimensions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if stats.average_dimensions %}
+                    <div class="info-box text-center mb-4">
+                        <h3>{{ stats.average_dimensions.width }} x {{ stats.average_dimensions.height }}</h3>
+                        <p>Average Image Size (pixels)</p>
+                    </div>
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="border rounded p-3">
+                                <i class="fas fa-arrow-left-right fa-2x text-primary mb-2"></i>
+                                <h5>{{ stats.average_dimensions.width }}</h5>
+                                <p class="text-muted mb-0">Avg Width</p>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="border rounded p-3">
+                                <i class="fas fa-arrow-up-down fa-2x text-primary mb-2"></i>
+                                <h5>{{ stats.average_dimensions.height }}</h5>
+                                <p class="text-muted mb-0">Avg Height</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Dimension data not available</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Format Distribution -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-file-image me-2 text-info"></i>
+                        Format Distribution
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if stats.format_distribution %}
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Format</th>
+                                    <th>Count</th>
+                                    <th>Percentage</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for format, count in stats.format_distribution.items %}
+                                <tr>
+                                    <td><span class="badge bg-secondary">{{ format|upper }}</span></td>
+                                    <td>{{ count }}</td>
+                                    <td>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar" style="width: {{ count|floatformat:1 }}%">
+                                                {{ count|floatformat:1 }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-file-image fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Format data not available</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Size Distribution -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-bar me-2 text-warning"></i>
+                        File Size Distribution
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="sizeChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quality Metrics -->
+    <div class="card mt-2">
+        <div class="card-header bg-white">
+            <h5 class="mb-0">
+                <i class="fas fa-star me-2 text-warning"></i>
+                Quality Metrics
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <div class="border rounded p-3 text-center">
+                        <i class="fas fa-chart-line fa-2x text-primary mb-2"></i>
+                        <div class="metric-value">{{ stats.quality_score|default:"N/A" }}</div>
+                        <p class="text-muted mb-0">Quality Score</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="border rounded p-3 text-center">
+                        <i class="fas fa-percent fa-2x text-success mb-2"></i>
+                        <div class="metric-value">{{ stats.success_rate|default:"N/A" }}%</div>
+                        <p class="text-muted mb-0">Success Rate</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="border rounded p-3 text-center">
+                        <i class="fas fa-clock fa-2x text-info mb-2"></i>
+                        <div class="metric-value">{{ stats.processing_time|default:"N/A" }}s</div>
+                        <p class="text-muted mb-0">Processing Time</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Category Distribution Chart
+    const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+    const categoryData = {{ stats.category_distribution|safe }};
+    
+    new Chart(categoryCtx, {
+        type: 'pie',
+        data: {
+            labels: Object.keys(categoryData),
+            datasets: [{
+                data: Object.values(categoryData),
+                backgroundColor: ['#007bff', '#28a745', '#ffc107', '#dc3545', '#17a2b8'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+    
+    // Size Distribution Chart
+    const sizeCtx = document.getElementById('sizeChart').getContext('2d');
+    // Sample size distribution data - replace with actual data if available
+    const sizeDistribution = {
+        labels: ['< 100KB', '100KB-500KB', '500KB-1MB', '1MB-5MB', '> 5MB'],
+        counts: [0, 0, 0, 0, 0]
+    };
+    
+    new Chart(sizeCtx, {
+        type: 'bar',
+        data: {
+            labels: sizeDistribution.labels,
+            datasets: [{
+                label: 'Number of Images',
+                data: sizeDistribution.counts,
+                backgroundColor: '#007bff',
+                borderRadius: 5
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Count'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'File Size'
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

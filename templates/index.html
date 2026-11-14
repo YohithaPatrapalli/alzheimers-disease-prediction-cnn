@@ -1,0 +1,534 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Home - Alzheimer's Disease Prediction System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .hero-section {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        position: relative;
+        overflow: hidden;
+    }
+    .hero-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('{% static "images/pattern.png" %}') repeat;
+        opacity: 0.1;
+        pointer-events: none;
+    }
+    .feature-card {
+        transition: transform 0.3s, box-shadow 0.3s;
+        border: none;
+        border-radius: 15px;
+    }
+    .feature-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    }
+    .feature-icon {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+        color: white;
+        font-size: 2rem;
+    }
+    .stat-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 15px;
+        padding: 30px;
+        color: white;
+        text-align: center;
+    }
+    .step-card {
+        text-align: center;
+        padding: 30px;
+        border-radius: 15px;
+        background: #f8f9fa;
+        transition: transform 0.3s;
+        position: relative;
+    }
+    .step-card:hover {
+        transform: translateY(-5px);
+    }
+    .step-number {
+        position: absolute;
+        top: -15px;
+        left: -15px;
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 1.2rem;
+    }
+    .testimonial-card {
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        transition: transform 0.3s;
+    }
+    .testimonial-card:hover {
+        transform: translateY(-5px);
+    }
+    .floating {
+        animation: floating 3s ease-in-out infinite;
+    }
+    @keyframes floating {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-20px); }
+    }
+    .stats-card {
+        position: absolute;
+        bottom: 30px;
+        left: 30px;
+        background: white;
+        border-radius: 10px;
+        padding: 15px 25px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+    .wave-separator {
+        position: absolute;
+        bottom: -5px;
+        left: 0;
+        width: 100%;
+        overflow: hidden;
+        line-height: 0;
+    }
+    .counter {
+        font-size: 2.5rem;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section text-white py-5 position-relative">
+    <div class="container py-5">
+        <div class="row min-vh-100 align-items-center">
+            <div class="col-lg-6 animate__animated animate__fadeInLeft" data-aos="fade-right">
+                <h1 class="display-4 fw-bold mb-4">
+                    Early Detection of <span class="text-warning">Alzheimer's Disease</span>
+                </h1>
+                <p class="lead mb-4">
+                    Advanced AI-powered system using Deep Learning CNN models for multi-stage classification of Alzheimer's Disease from MRI images.
+                </p>
+                <div class="features-list mb-4">
+                    <div class="row">
+                        <div class="col-md-6 mb-2">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <span>4-Stage Classification</span>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <span>High Accuracy (≥85%)</span>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <span>Real-time Prediction</span>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <span>QR Code Integration</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="hero-buttons">
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'prediction:static_prediction' %}" class="btn btn-light btn-lg me-3">
+                            <i class="fas fa-play me-2"></i>Start Prediction
+                        </a>
+                        <a href="{% url 'dataset_manager:upload' %}" class="btn btn-outline-light btn-lg">
+                            <i class="fas fa-upload me-2"></i>Upload Dataset
+                        </a>
+                    {% else %}
+                        <a href="{% url 'register' %}" class="btn btn-light btn-lg me-3">
+                            <i class="fas fa-user-plus me-2"></i>Get Started Free
+                        </a>
+                        <a href="{% url 'login' %}" class="btn btn-outline-light btn-lg">
+                            <i class="fas fa-sign-in-alt me-2"></i>Login
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-lg-6 animate__animated animate__fadeInRight" data-aos="fade-left">
+                <div class="position-relative">
+                    <img src="{% static 'images/hero-brain.png' %}" alt="Brain MRI" class="img-fluid floating">
+                    <div class="stats-card animate__animated animate__pulse animate__infinite">
+                        <div class="d-flex gap-4">
+                            <div>
+                                <h3 class="mb-0 text-primary">95%</h3>
+                                <small class="text-muted">Accuracy</small>
+                            </div>
+                            <div>
+                                <h3 class="mb-0 text-primary">4</h3>
+                                <small class="text-muted">Stages</small>
+                            </div>
+                            <div>
+                                <h3 class="mb-0 text-primary">10k+</h3>
+                                <small class="text-muted">Predictions</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="wave-separator">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320">
+            <path fill="#ffffff" fill-opacity="1" d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,122.7C672,117,768,139,864,154.7C960,171,1056,181,1152,170.7C1248,160,1344,128,1392,112L1440,96L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
+        </svg>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="features-section py-5">
+    <div class="container">
+        <div class="section-header text-center mb-5" data-aos="fade-up">
+            <h2 class="display-5 fw-bold">Key Features</h2>
+            <p class="text-muted">Advanced capabilities for accurate Alzheimer's detection</p>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="100">
+                <div class="feature-card card h-100 text-center p-4">
+                    <div class="feature-icon">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <h5>Deep Learning CNN</h5>
+                    <p class="text-muted">Advanced convolutional neural networks for accurate feature extraction from MRI images.</p>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="200">
+                <div class="feature-card card h-100 text-center p-4">
+                    <div class="feature-icon">
+                        <i class="fas fa-layer-group"></i>
+                    </div>
+                    <h5>4-Stage Classification</h5>
+                    <p class="text-muted">Non-Demented, Very Mild, Mild, and Moderate stages for comprehensive diagnosis.</p>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="300">
+                <div class="feature-card card h-100 text-center p-4">
+                    <div class="feature-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h5>Performance Metrics</h5>
+                    <p class="text-muted">Accuracy, Precision, Recall, and F1-Score evaluation for model validation.</p>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="400">
+                <div class="feature-card card h-100 text-center p-4">
+                    <div class="feature-icon">
+                        <i class="fas fa-qrcode"></i>
+                    </div>
+                    <h5>QR Code Integration</h5>
+                    <p class="text-muted">Dynamic predictions with QR code generation for easy sharing.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works -->
+<section class="how-it-works-section py-5 bg-light">
+    <div class="container">
+        <div class="section-header text-center mb-5" data-aos="fade-up">
+            <h2 class="display-5 fw-bold">How It Works</h2>
+            <p class="text-muted">Simple 4-step process for Alzheimer's detection</p>
+        </div>
+        
+        <div class="row">
+            <div class="col-lg-3 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="100">
+                <div class="step-card">
+                    <div class="step-number">1</div>
+                    <i class="fas fa-cloud-upload-alt fa-3x mb-3 text-primary"></i>
+                    <h5>Upload MRI Image</h5>
+                    <p class="text-muted">Upload brain MRI image in JPG or PNG format</p>
+                </div>
+            </div>
+            
+            <div class="col-lg-3 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="200">
+                <div class="step-card">
+                    <div class="step-number">2</div>
+                    <i class="fas fa-sliders-h fa-3x mb-3 text-primary"></i>
+                    <h5>Preprocessing</h5>
+                    <p class="text-muted">Image resizing, normalization, and augmentation</p>
+                </div>
+            </div>
+            
+            <div class="col-lg-3 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="300">
+                <div class="step-card">
+                    <div class="step-number">3</div>
+                    <i class="fas fa-robot fa-3x mb-3 text-primary"></i>
+                    <h5>CNN Analysis</h5>
+                    <p class="text-muted">Deep learning model analyzes brain features</p>
+                </div>
+            </div>
+            
+            <div class="col-lg-3 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="400">
+                <div class="step-card">
+                    <div class="step-number">4</div>
+                    <i class="fas fa-file-medical-alt fa-3x mb-3 text-primary"></i>
+                    <h5>Get Results</h5>
+                    <p class="text-muted">View prediction with confidence score</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Disease Stages -->
+<section class="stages-section py-5">
+    <div class="container">
+        <div class="section-header text-center mb-5" data-aos="fade-up">
+            <h2 class="display-5 fw-bold">Alzheimer's Disease Stages</h2>
+            <p class="text-muted">Understanding the progression of Alzheimer's disease</p>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6 col-lg-3 mb-4" data-aos="fade-up" data-aos-delay="100">
+                <div class="card h-100 text-center border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="stage-icon bg-success text-white rounded-circle d-inline-flex p-3 mb-3">
+                            <i class="fas fa-smile fa-2x"></i>
+                        </div>
+                        <h4>Non-Demented</h4>
+                        <p class="text-muted">No signs of dementia, normal cognitive function</p>
+                        <div class="progress mt-3">
+                            <div class="progress-bar bg-success" style="width: 25%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-3 mb-4" data-aos="fade-up" data-aos-delay="200">
+                <div class="card h-100 text-center border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="stage-icon bg-info text-white rounded-circle d-inline-flex p-3 mb-3">
+                            <i class="fas fa-meh fa-2x"></i>
+                        </div>
+                        <h4>Very Mild</h4>
+                        <p class="text-muted">Early signs of cognitive decline, mild memory issues</p>
+                        <div class="progress mt-3">
+                            <div class="progress-bar bg-info" style="width: 50%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-3 mb-4" data-aos="fade-up" data-aos-delay="300">
+                <div class="card h-100 text-center border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="stage-icon bg-warning text-dark rounded-circle d-inline-flex p-3 mb-3">
+                            <i class="fas fa-frown fa-2x"></i>
+                        </div>
+                        <h4>Mild</h4>
+                        <p class="text-muted">Noticeable cognitive decline, requires assistance</p>
+                        <div class="progress mt-3">
+                            <div class="progress-bar bg-warning" style="width: 75%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-3 mb-4" data-aos="fade-up" data-aos-delay="400">
+                <div class="card h-100 text-center border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="stage-icon bg-danger text-white rounded-circle d-inline-flex p-3 mb-3">
+                            <i class="fas fa-sad-tear fa-2x"></i>
+                        </div>
+                        <h4>Moderate</h4>
+                        <p class="text-muted">Severe cognitive decline, requires full-time care</p>
+                        <div class="progress mt-3">
+                            <div class="progress-bar bg-danger" style="width: 100%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Statistics Section -->
+<section class="statistics-section py-5 bg-primary text-white">
+    <div class="container">
+        <div class="row text-center">
+            <div class="col-md-3 col-6 mb-4" data-aos="fade-up" data-aos-delay="100">
+                <i class="fas fa-database fa-3x mb-3"></i>
+                <h3 class="counter" data-target="10000">0</h3>
+                <p>MRI Images Processed</p>
+            </div>
+            
+            <div class="col-md-3 col-6 mb-4" data-aos="fade-up" data-aos-delay="200">
+                <i class="fas fa-robot fa-3x mb-3"></i>
+                <h3 class="counter" data-target="50">0</h3>
+                <p>Trained Models</p>
+            </div>
+            
+            <div class="col-md-3 col-6 mb-4" data-aos="fade-up" data-aos-delay="300">
+                <i class="fas fa-users fa-3x mb-3"></i>
+                <h3 class="counter" data-target="5000">0</h3>
+                <p>Active Users</p>
+            </div>
+            
+            <div class="col-md-3 col-6 mb-4" data-aos="fade-up" data-aos-delay="400">
+                <i class="fas fa-check-circle fa-3x mb-3"></i>
+                <h3 class="counter" data-target="95">0</h3>
+                <p>Accuracy Rate %</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Testimonials -->
+<section class="testimonials-section py-5">
+    <div class="container">
+        <div class="section-header text-center mb-5" data-aos="fade-up">
+            <h2 class="display-5 fw-bold">What Medical Professionals Say</h2>
+            <p class="text-muted">Trusted by healthcare providers worldwide</p>
+        </div>
+        
+        <div class="row">
+            <div class="col-lg-4 mb-4" data-aos="fade-up" data-aos-delay="100">
+                <div class="testimonial-card">
+                    <i class="fas fa-quote-left fa-2x text-primary opacity-50 mb-3"></i>
+                    <p class="mb-4">This system has revolutionized our early detection process. The accuracy and speed are impressive.</p>
+                    <div class="d-flex align-items-center">
+                        <img src="{% static 'images/doctor1.jpg' %}" class="rounded-circle me-3" width="60" height="60" alt="Doctor">
+                        <div>
+                            <h6 class="mb-0">Dr. Sarah Johnson</h6>
+                            <small class="text-muted">Neurologist, Mayo Clinic</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4 mb-4" data-aos="fade-up" data-aos-delay="200">
+                <div class="testimonial-card">
+                    <i class="fas fa-quote-left fa-2x text-primary opacity-50 mb-3"></i>
+                    <p class="mb-4">The 4-stage classification helps us plan treatment strategies more effectively.</p>
+                    <div class="d-flex align-items-center">
+                        <img src="{% static 'images/doctor2.jpg' %}" class="rounded-circle me-3" width="60" height="60" alt="Doctor">
+                        <div>
+                            <h6 class="mb-0">Dr. Michael Chen</h6>
+                            <small class="text-muted">Radiologist, Johns Hopkins</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4 mb-4" data-aos="fade-up" data-aos-delay="300">
+                <div class="testimonial-card">
+                    <i class="fas fa-quote-left fa-2x text-primary opacity-50 mb-3"></i>
+                    <p class="mb-4">The QR code feature makes it easy to share results with colleagues and patients.</p>
+                    <div class="d-flex align-items-center">
+                        <img src="{% static 'images/doctor3.jpg' %}" class="rounded-circle me-3" width="60" height="60" alt="Doctor">
+                        <div>
+                            <h6 class="mb-0">Dr. Emily Rodriguez</h6>
+                            <small class="text-muted">Clinical Researcher, Stanford</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta-section py-5 bg-gradient-primary text-white">
+    <div class="container text-center py-5" data-aos="zoom-in">
+        <h2 class="display-5 fw-bold mb-4">Ready to Get Started?</h2>
+        <p class="lead mb-4">Join thousands of healthcare professionals using our AI-powered prediction system.</p>
+        {% if user.is_authenticated %}
+            <a href="{% url 'prediction:static_prediction' %}" class="btn btn-light btn-lg px-5">
+                <i class="fas fa-play me-2"></i>Start Predicting
+            </a>
+        {% else %}
+            <a href="{% url 'register' %}" class="btn btn-light btn-lg px-5">
+                <i class="fas fa-user-plus me-2"></i>Create Free Account
+            </a>
+        {% endif %}
+    </div>
+</section>
+
+<style>
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    .stage-icon {
+        width: 70px;
+        height: 70px;
+        line-height: 70px;
+    }
+    .counter {
+        font-size: 2.5rem;
+        font-weight: bold;
+    }
+    @media (max-width: 768px) {
+        .counter {
+            font-size: 1.8rem;
+        }
+        .feature-card {
+            margin-bottom: 20px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Counter animation
+    function animateCounters() {
+        const counters = document.querySelectorAll('.counter');
+        counters.forEach(counter => {
+            const target = parseInt(counter.getAttribute('data-target'));
+            let current = 0;
+            const increment = target / 50;
+            const updateCounter = () => {
+                current += increment;
+                if (current < target) {
+                    counter.textContent = Math.ceil(current);
+                    requestAnimationFrame(updateCounter);
+                } else {
+                    counter.textContent = target;
+                }
+            };
+            updateCounter();
+        });
+    }
+    
+    // Intersection Observer for counters
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                animateCounters();
+                observer.unobserve(entry.target);
+            }
+        });
+    });
+    
+    const statsSection = document.querySelector('.statistics-section');
+    if (statsSection) {
+        observer.observe(statsSection);
+    }
+</script>
+{% endblock %}

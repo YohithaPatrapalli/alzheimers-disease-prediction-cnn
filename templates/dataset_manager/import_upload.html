@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block title %}Upload MRI Dataset{% endblock %}
+
+{% block page_header %}
+<div class="page-header bg-success text-white py-4">
+    <div class="container">
+        <h1 class="display-5 fw-bold mb-2">Upload MRI Dataset</h1>
+        <p class="lead mb-0">Import a four-class Kaggle ZIP and prepare train, validation, and test folders.</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="alert alert-warning">
+        <strong>Dataset caveat:</strong> The Omdena archive is augmented and its test set has few moderate-class images.
+        Validation and test metrics may not represent performance on new patients. This tool is for research and
+        education, not diagnosis.
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <p>The ZIP must contain <code>train_images/&lt;class&gt;/</code> and
+                <code>test_images/&lt;class&gt;/</code> with Non-Demented, Very Mild, Mild, and Moderate class folders.
+                ZIP files up to 1 GB are accepted.</p>
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label" for="{{ form.name.id_for_label }}">Dataset name</label>
+                    {{ form.name }}
+                    {% for error in form.name.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="{{ form.description.id_for_label }}">Description</label>
+                    {{ form.description }}
+                    {% for error in form.description.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="{{ form.zip_file.id_for_label }}">Kaggle ZIP archive</label>
+                    {{ form.zip_file }}
+                    {% for error in form.zip_file.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                </div>
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+                {% endif %}
+                <button class="btn btn-primary" type="submit">Upload and prepare dataset</button>
+                <a class="btn btn-outline-secondary" href="{% url 'dataset_manager:list' %}">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

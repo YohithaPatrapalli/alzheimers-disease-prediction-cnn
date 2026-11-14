@@ -1,0 +1,345 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Upload Dataset{% endblock %}
+
+{% block extra_css %}
+<style>
+    .upload-area {
+        border: 2px dashed #dee2e6;
+        border-radius: 10px;
+        padding: 40px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+        background: #f8f9fa;
+    }
+    .upload-area:hover, .upload-area.drag-over {
+        border-color: #007bff;
+        background: #e9ecef;
+    }
+    .upload-area i {
+        font-size: 3rem;
+        color: #6c757d;
+        margin-bottom: 15px;
+    }
+    .file-info {
+        background: #e9ecef;
+        border-radius: 5px;
+        padding: 10px;
+        margin-top: 10px;
+    }
+    .requirement-badge {
+        background: #f8f9fa;
+        border-left: 3px solid #28a745;
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+    .requirement-badge.warning {
+        border-left-color: #ffc107;
+    }
+</style>
+{% endblock %}
+
+{% block page_header %}
+<div class="page-header bg-success text-white py-4">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="display-5 fw-bold mb-2">Upload Dataset</h1>
+                <p class="lead mb-0">Upload MRI image dataset for Alzheimer's disease classification</p>
+            </div>
+            <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                <a href="{% url 'dataset_manager:list' %}" class="btn btn-outline-light">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Datasets
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <!-- Dataset Requirements -->
+            <div class="card mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle me-2 text-info"></i>
+                        Dataset Requirements
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="requirement-badge">
+                        <i class="fas fa-folder-tree text-primary me-2"></i>
+                        <strong>Folder Structure:</strong> Organize images in folders named after the disease stage:
+                        <ul class="mt-2 mb-0">
+                            <li><code>non_demented/</code> - Healthy control images</li>
+                            <li><code>very_mild/</code> - Very mild dementia</li>
+                            <li><code>mild/</code> - Mild dementia</li>
+                            <li><code>moderate/</code> - Moderate dementia</li>
+                        </ul>
+                    </div>
+                    <div class="requirement-badge">
+                        <i class="fas fa-file-image text-success me-2"></i>
+                        <strong>Supported Formats:</strong> JPG, JPEG, PNG, BMP, TIFF
+                    </div>
+                    <div class="requirement-badge">
+                        <i class="fas fa-chart-line text-warning me-2"></i>
+                        <strong>Image Quality:</strong> Minimum resolution of 100x100 pixels recommended
+                    </div>
+                    <div class="requirement-badge">
+                        <i class="fas fa-database text-danger me-2"></i>
+                        <strong>File Size Limit:</strong> Maximum 10GB per dataset
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Upload Form -->
+            <div class="card">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-upload me-2 text-primary"></i>
+                        Upload Dataset
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" id="uploadForm">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.name.id_for_label }}" class="form-label">Dataset Name *</label>
+                            {{ form.name }}
+                            {% if form.name.errors %}
+                                <div class="text-danger small">{{ form.name.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">Description</label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                                <div class="text-danger small">{{ form.description.errors }}</div>
+                            {% endif %}
+                            <small class="text-muted">Optional: Provide additional details about this dataset</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.zip_file.id_for_label }}" class="form-label">Dataset Archive *</label>
+                            <div class="upload-area" id="uploadArea">
+                                <input type="file" name="zip_file" id="id_zip_file" class="d-none" accept=".zip,.rar,.7z">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <h5>Click or drag & drop to upload</h5>
+                                <p class="text-muted">ZIP, RAR, or 7Z archives up to 10GB</p>
+                                <div id="fileInfo" class="file-info d-none">
+                                    <i class="fas fa-file-archive"></i>
+                                    <span id="fileName"></span>
+                                    <span id="fileSize" class="ms-2 text-muted"></span>
+                                    <button type="button" class="btn btn-sm btn-link text-danger float-end" id="clearFile">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            {% if form.zip_file.errors %}
+                                <div class="text-danger small mt-2">{{ form.zip_file.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="alert alert-warning" id="uploadWarning" style="display: none;">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <span id="warningMessage"></span>
+                        </div>
+                        
+                        <div class="progress mb-3" id="uploadProgress" style="display: none;">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                 role="progressbar" style="width: 0%">0%</div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                                <i class="fas fa-upload me-2"></i>Upload Dataset
+                            </button>
+                            <a href="{% url 'dataset_manager:list' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Sample Structure -->
+            <div class="card mt-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-code-branch me-2 text-primary"></i>
+                        Sample Folder Structure
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <pre class="bg-light p-3 rounded" style="font-family: monospace;">
+dataset.zip/
+├── non_demented/
+│   ├── image_001.jpg
+│   ├── image_002.jpg
+│   └── ...
+├── very_mild/
+│   ├── image_101.jpg
+│   ├── image_102.jpg
+│   └── ...
+├── mild/
+│   ├── image_201.jpg
+│   ├── image_202.jpg
+│   └── ...
+└── moderate/
+    ├── image_301.jpg
+    ├── image_302.jpg
+    └── ...
+                    </pre>
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-lightbulb me-2"></i>
+                        <strong>Pro Tip:</strong> For best results, ensure each category has a balanced number of images.
+                        Use descriptive filenames for easier identification.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('id_zip_file');
+    const fileInfo = document.getElementById('fileInfo');
+    const fileName = document.getElementById('fileName');
+    const fileSize = document.getElementById('fileSize');
+    const clearBtn = document.getElementById('clearFile');
+    const submitBtn = document.getElementById('submitBtn');
+    const uploadProgress = document.getElementById('uploadProgress');
+    const uploadWarning = document.getElementById('uploadWarning');
+    const warningMessage = document.getElementById('warningMessage');
+    
+    let selectedFile = null;
+    
+    // Drag and drop functionality
+    uploadArea.addEventListener('click', () => fileInput.click());
+    
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.classList.add('drag-over');
+    });
+    
+    uploadArea.addEventListener('dragleave', () => {
+        uploadArea.classList.remove('drag-over');
+    });
+    
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('drag-over');
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            handleFile(files[0]);
+        }
+    });
+    
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            handleFile(e.target.files[0]);
+        }
+    });
+    
+    function handleFile(file) {
+        const validExtensions = ['.zip', '.rar', '.7z'];
+        const ext = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+        
+        // Validate file extension
+        if (!validExtensions.includes(ext)) {
+            showWarning('Please upload a valid archive file (ZIP, RAR, or 7Z)');
+            return;
+        }
+        
+        // Validate file size (10GB max)
+        const maxSize = 10 * 1024 * 1024 * 1024; // 10GB
+        if (file.size > maxSize) {
+            showWarning('File size exceeds 10GB limit');
+            return;
+        }
+        
+        hideWarning();
+        selectedFile = file;
+        
+        // Display file info
+        fileName.textContent = file.name;
+        fileSize.textContent = formatFileSize(file.size);
+        fileInfo.classList.remove('d-none');
+        uploadArea.style.opacity = '0.5';
+        
+        // Enable submit button
+        submitBtn.disabled = false;
+    }
+    
+    clearBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        selectedFile = null;
+        fileInput.value = '';
+        fileInfo.classList.add('d-none');
+        uploadArea.style.opacity = '1';
+        submitBtn.disabled = true;
+        hideWarning();
+    });
+    
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+    
+    function showWarning(message) {
+        warningMessage.textContent = message;
+        uploadWarning.style.display = 'block';
+        submitBtn.disabled = true;
+    }
+    
+    function hideWarning() {
+        uploadWarning.style.display = 'none';
+    }
+    
+    // Form submission with progress
+    document.getElementById('uploadForm').addEventListener('submit', function(e) {
+        if (!selectedFile) {
+            e.preventDefault();
+            showWarning('Please select a file to upload');
+            return;
+        }
+        
+        // Show progress bar
+        uploadProgress.style.display = 'block';
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Uploading...';
+        
+        // Simulate progress (actual progress would require XHR upload)
+        let progress = 0;
+        const interval = setInterval(() => {
+            progress += 10;
+            const progressBar = uploadProgress.querySelector('.progress-bar');
+            if (progress <= 90) {
+                progressBar.style.width = progress + '%';
+                progressBar.textContent = progress + '%';
+            }
+        }, 500);
+        
+        // Clear interval after form submission (will be handled by page reload)
+        setTimeout(() => {
+            clearInterval(interval);
+        }, 5000);
+    });
+    
+    // Validate form on load
+    submitBtn.disabled = true;
+</script>
+{% endblock %}

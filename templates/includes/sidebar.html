@@ -1,0 +1,385 @@
+{% load static %}
+<div class="sidebar premium-sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <div class="user-info text-center">
+            {% if user.profile.avatar %}
+                <img src="{{ user.profile.avatar.url }}" class="rounded-circle avatar-lg mb-3" alt="Avatar">
+            {% else %}
+                <div class="avatar-placeholder-lg mb-3">
+                    <i class="fas fa-user-circle fa-4x text-primary"></i>
+                </div>
+            {% endif %}
+            <h6 class="mb-1">{{ user.get_full_name|default:user.username }}</h6>
+            <small class="text-muted">{{ user.profile.get_user_type_display|default:"User" }}</small>
+        </div>
+    </div>
+    
+    <div class="sidebar-menu">
+        <!-- Main Menu -->
+        <div class="menu-section">
+            <div class="menu-title">Main</div>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link {% if request.path == '/dashboard/' %}active{% endif %}" href="{% url 'core:dashboard' %}">
+                        <i class="fas fa-tachometer-alt me-3"></i>
+                        <span>Dashboard</span>
+                        {% if dashboard_notifications > 0 %}
+                            <span class="badge bg-primary ms-auto">{{ dashboard_notifications }}</span>
+                        {% endif %}
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if 'static' in request.path %}active{% endif %}" href="{% url 'prediction:static_prediction' %}">
+                        <i class="fas fa-image me-3"></i>
+                        <span>Static Prediction</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if 'dynamic' in request.path %}active{% endif %}" href="{% url 'prediction:dynamic_prediction' %}">
+                        <i class="fas fa-qrcode me-3"></i>
+                        <span>Dynamic (QR Code)</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+        
+        <!-- Management -->
+        <div class="menu-section">
+            <div class="menu-title">Management</div>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link {% if 'dataset' in request.path %}active{% endif %}" href="{% url 'dataset_manager:list' %}">
+                        <i class="fas fa-database me-3"></i>
+                        <span>Datasets</span>
+                        {% if pending_datasets > 0 %}
+                            <span class="badge bg-warning ms-auto">{{ pending_datasets }}</span>
+                        {% endif %}
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if 'models' in request.path %}active{% endif %}" href="{% url 'prediction:model_list' %}">
+                        <i class="fas fa-brain me-3"></i>
+                        <span>Models</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if 'batch' in request.path %}active{% endif %}" href="{% url 'prediction:batch_upload' %}">
+                        <i class="fas fa-layer-group me-3"></i>
+                        <span>Batch Processing</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+        
+        <!-- Analytics -->
+        <div class="menu-section">
+            <div class="menu-title">Analytics</div>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link {% if 'analytics' in request.path %}active{% endif %}" href="{% url 'prediction:analytics' %}">
+                        <i class="fas fa-chart-line me-3"></i>
+                        <span>Performance Analytics</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'prediction:history' %}">
+                        <i class="fas fa-history me-3"></i>
+                        <span>Prediction History</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'core:activity_logs' %}">
+                        <i class="fas fa-clipboard-list me-3"></i>
+                        <span>Activity Logs</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+        
+        <!-- Reports -->
+        <div class="menu-section">
+            <div class="menu-title">Reports</div>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link" href="#" id="exportReportBtn">
+                        <i class="fas fa-file-export me-3"></i>
+                        <span>Export Reports</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#" id="generatePDFBtn">
+                        <i class="fas fa-file-pdf me-3"></i>
+                        <span>Generate PDF</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+        
+        <!-- Settings -->
+        <div class="menu-section">
+            <div class="menu-title">Settings</div>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'core:profile' %}">
+                        <i class="fas fa-user me-3"></i>
+                        <span>Profile Settings</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'core:settings' %}">
+                        <i class="fas fa-cog me-3"></i>
+                        <span>System Settings</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'core:api_docs' %}">
+                        <i class="fas fa-code me-3"></i>
+                        <span>API Documentation</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="sidebar-footer">
+        <!-- Storage Usage -->
+        <div class="storage-info mb-3">
+            <div class="d-flex justify-content-between small mb-1">
+                <span><i class="fas fa-database me-1"></i> Storage Used</span>
+                <span>{{ used_storage|default:"0" }} / {{ total_storage|default:"10" }} GB</span>
+            </div>
+            <div class="progress" style="height: 6px;">
+                <div class="progress-bar bg-success" style="width: {{ storage_percentage|default:0 }}%"></div>
+            </div>
+        </div>
+        
+        <!-- System Status -->
+        <div class="system-status mb-3">
+            <div class="d-flex justify-content-between small">
+                <span><i class="fas fa-heartbeat text-success me-1"></i> System Status</span>
+                <span class="text-success">Online</span>
+            </div>
+            <div class="d-flex justify-content-between small mt-1">
+                <span><i class="fas fa-robot me-1"></i> Active Model</span>
+                <span>{{ active_model_name|default:"Not Set" }}</span>
+            </div>
+        </div>
+        
+        <!-- Collapse Button -->
+        <div class="d-grid gap-2">
+            <button class="btn btn-sm btn-outline-secondary" id="toggleSidebarBtn">
+                <i class="fas fa-angle-left me-1"></i> Collapse Menu
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .premium-sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 280px;
+        background: #fff;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        transition: all 0.3s ease;
+        overflow-y: auto;
+    }
+    
+    .premium-sidebar.collapsed {
+        width: 70px;
+    }
+    
+    .premium-sidebar.collapsed .menu-title,
+    .premium-sidebar.collapsed .nav-link span,
+    .premium-sidebar.collapsed .user-info h6,
+    .premium-sidebar.collapsed .user-info small,
+    .premium-sidebar.collapsed .storage-info,
+    .premium-sidebar.collapsed .system-status,
+    .premium-sidebar.collapsed .sidebar-footer .btn span {
+        display: none;
+    }
+    
+    .premium-sidebar.collapsed .nav-link i {
+        margin-right: 0 !important;
+        font-size: 1.2rem;
+    }
+    
+    .premium-sidebar.collapsed .sidebar-header {
+        padding: 20px 0;
+    }
+    
+    .premium-sidebar.collapsed .avatar-placeholder-lg i {
+        font-size: 2rem;
+    }
+    
+    .sidebar-header {
+        padding: 30px 20px;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .avatar-lg {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border: 3px solid #fff;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .avatar-placeholder-lg i {
+        font-size: 4rem;
+    }
+    
+    .sidebar-menu {
+        flex: 1;
+        padding: 20px 0;
+    }
+    
+    .menu-section {
+        margin-bottom: 25px;
+    }
+    
+    .menu-title {
+        padding: 0 20px 10px;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #6c757d;
+        font-weight: 600;
+    }
+    
+    .nav-link {
+        padding: 10px 20px;
+        color: #495057;
+        transition: all 0.2s;
+        border-radius: 0;
+        position: relative;
+    }
+    
+    .nav-link:hover {
+        background-color: #f8f9fa;
+        color: #007bff;
+    }
+    
+    .nav-link.active {
+        background: linear-gradient(90deg, #e7f1ff 0%, #fff 100%);
+        color: #007bff;
+        border-right: 3px solid #007bff;
+    }
+    
+    .nav-link i {
+        width: 20px;
+        font-size: 1rem;
+    }
+    
+    .sidebar-footer {
+        padding: 20px;
+        border-top: 1px solid #e9ecef;
+    }
+    
+    .storage-info .progress {
+        background-color: #e9ecef;
+    }
+    
+    /* Dark mode styles */
+    body.dark-mode .premium-sidebar {
+        background: #1e1e2f;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.2);
+    }
+    
+    body.dark-mode .sidebar-header {
+        border-bottom-color: #2c2c3a;
+    }
+    
+    body.dark-mode .nav-link {
+        color: #a0a0b0;
+    }
+    
+    body.dark-mode .nav-link:hover {
+        background-color: #2c2c3a;
+        color: #fff;
+    }
+    
+    body.dark-mode .nav-link.active {
+        background: linear-gradient(90deg, #2c2c3a 0%, #1e1e2f 100%);
+        color: #007bff;
+    }
+    
+    body.dark-mode .menu-title {
+        color: #6c757d;
+    }
+    
+    body.dark-mode .sidebar-footer {
+        border-top-color: #2c2c3a;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .premium-sidebar {
+            transform: translateX(-100%);
+        }
+        .premium-sidebar.mobile-open {
+            transform: translateX(0);
+        }
+        .main-content.with-sidebar {
+            margin-left: 0 !important;
+        }
+    }
+</style>
+
+<script>
+    // Sidebar toggle
+    const sidebar = document.getElementById('sidebar');
+    const toggleBtn = document.getElementById('toggleSidebarBtn');
+    
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', function() {
+            sidebar.classList.toggle('collapsed');
+            localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+            
+            const icon = this.querySelector('i');
+            if (sidebar.classList.contains('collapsed')) {
+                icon.classList.remove('fa-angle-left');
+                icon.classList.add('fa-angle-right');
+                this.querySelector('span').textContent = ' Expand';
+            } else {
+                icon.classList.remove('fa-angle-right');
+                icon.classList.add('fa-angle-left');
+                this.querySelector('span').textContent = ' Collapse Menu';
+            }
+        });
+        
+        // Load saved state
+        if (localStorage.getItem('sidebarCollapsed') === 'true') {
+            sidebar.classList.add('collapsed');
+            const icon = toggleBtn.querySelector('i');
+            icon.classList.remove('fa-angle-left');
+            icon.classList.add('fa-angle-right');
+            toggleBtn.querySelector('span').textContent = ' Expand';
+        }
+    }
+    
+    // Mobile sidebar toggle (add class via JS)
+    const mobileMenuBtn = document.querySelector('.navbar-toggler');
+    if (mobileMenuBtn) {
+        mobileMenuBtn.addEventListener('click', function() {
+            sidebar.classList.toggle('mobile-open');
+        });
+    }
+    
+    // Export report functionality
+    document.getElementById('exportReportBtn')?.addEventListener('click', function(e) {
+        e.preventDefault();
+        window.location.href = '{% url "prediction:export_analytics" %}';
+    });
+    
+    // Generate PDF functionality
+    document.getElementById('generatePDFBtn')?.addEventListener('click', function(e) {
+        e.preventDefault();
+        window.print();
+    });
+</script>

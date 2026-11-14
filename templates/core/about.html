@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block title %}About{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
+            <header class="text-center mb-5">
+                <i class="fas fa-brain fa-3x text-primary mb-3" aria-hidden="true"></i>
+                <h1 class="display-5 fw-bold">About the Prediction System</h1>
+                <p class="lead text-muted">
+                    A research and educational project for exploring MRI image classification with convolutional neural networks.
+                </p>
+            </header>
+
+            <section class="card shadow-sm mb-4">
+                <div class="card-body p-4">
+                    <h2 class="h4">What it does</h2>
+                    <p class="mb-0">
+                        The system lets users upload MRI images, run them through an available trained model,
+                        review prediction confidence scores, and revisit previous results and analytics.
+                        Results depend on the selected model and the quality of the input image.
+                    </p>
+                </div>
+            </section>
+
+            <div class="row g-4 mb-4">
+                <div class="col-md-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <i class="fas fa-image fa-2x text-info mb-3" aria-hidden="true"></i>
+                            <h2 class="h5">Image predictions</h2>
+                            <p class="text-muted mb-0">Submit an MRI image and review the model's predicted category and confidence distribution.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <i class="fas fa-history fa-2x text-success mb-3" aria-hidden="true"></i>
+                            <h2 class="h5">Prediction history</h2>
+                            <p class="text-muted mb-0">Return to saved results and view aggregate prediction activity in the analytics dashboard.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <i class="fas fa-cogs fa-2x text-warning mb-3" aria-hidden="true"></i>
+                            <h2 class="h5">Model management</h2>
+                            <p class="text-muted mb-0">Manage available models and datasets used by the application's prediction workflow.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="alert alert-warning" role="note">
+                <strong>Important:</strong> Predictions are for research and educational use only. They are not a medical diagnosis
+                and should not be used to guide clinical decisions. Consult a qualified healthcare professional for medical advice.
+            </div>
+
+            <div class="text-center mt-4">
+                <a href="{% url 'prediction:static_prediction' %}" class="btn btn-primary me-2">Start a Prediction</a>
+                <a href="{% url 'core:contact' %}" class="btn btn-outline-secondary">Contact Us</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

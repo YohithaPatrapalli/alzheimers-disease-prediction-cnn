@@ -103,6 +103,32 @@ Open the application in your browser:
 http://127.0.0.1:8000/
 ```
 
+## Deploy to Render
+
+The repository includes a Render Blueprint (`render.yaml`) for a public HTTPS deployment.
+It uses a persistent disk for the SQLite database, uploaded files, and model files. The
+Blueprint uses a paid service plan and disk; review Render's current pricing before
+creating the service.
+
+1. Push this project to a GitHub repository you control.
+2. In Render, choose **New > Blueprint**, connect that repository, and apply the
+   `render.yaml` configuration.
+3. Wait for the first deployment, then open the service's Shell and run:
+
+   ```bash
+   python manage.py createsuperuser
+   ```
+
+4. In `/admin/`, add a Trained Model, set its status to completed, and upload the trained
+   model file. Then open the model page in the app and activate it for your account.
+   Model files, the local SQLite database, and the imported dataset are not included in
+   Git, so the deployed service starts with a new database.
+5. Share the HTTPS `onrender.com` address shown on the Render service page.
+
+Use the project only with MRI images you are authorized to handle. Uploaded scans and
+prediction history are sensitive; application media links require signing in as the
+account that owns the file. The model is experimental and is not for clinical diagnosis.
+
 ## How to Use
 
 1. Start the Django development server.

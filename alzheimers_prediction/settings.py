@@ -6,6 +6,7 @@ Generated for Alzheimer's Disease Prediction System
 import os
 from pathlib import Path
 from decouple import config
+from django.core.exceptions import ImproperlyConfigured
 import sys
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'
@@ -20,7 +21,27 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-8x!q3#p@k9m2n5b7v9c1x
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
+if not DEBUG and SECRET_KEY.startswith('django-insecure-'):
+    raise ImproperlyConfigured('Set a production SECRET_KEY when DEBUG is False.')
+
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
+    if host.strip()
+]
+RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
+if RENDER_EXTERNAL_HOSTNAME and RENDER_EXTERNAL_HOSTNAME not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in config('CSRF_TRUSTED_ORIGINS', default='').split(',')
+    if origin.strip()
+]
+if RENDER_EXTERNAL_HOSTNAME:
+    render_origin = f'https://{RENDER_EXTERNAL_HOSTNAME}'
+    if render_origin not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(render_origin)
 
 # Application definition
 INSTALLED_APPS = [
@@ -43,6 +64,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -79,7 +101,7 @@ WSGI_APPLICATION = 'alzheimers_prediction.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': config('DATABASE_PATH', default=str(BASE_DIR / 'db.sqlite3')),
     }
 }
 
@@ -128,10 +150,12 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+if not DEBUG:
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 # Media files (User uploaded content)
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = Path(config('MEDIA_ROOT', default=str(BASE_DIR / 'media')))
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
@@ -170,8 +194,14 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
 # Machine Learning configuration for Alzheimer's Disease Prediction
 
 # Model paths
-MODEL_PATH = BASE_DIR / 'ml_models' / 'saved_models'
-CHECKPOINT_PATH = BASE_DIR / 'ml_models' / 'checkpoints'
+MODEL_PATH = Path(config(
+    'MODEL_DIRECTORY',
+    default=str(BASE_DIR / 'ml_models' / 'saved_models'),
+))
+CHECKPOINT_PATH = Path(config(
+    'CHECKPOINT_DIRECTORY',
+    default=str(BASE_DIR / 'ml_models' / 'checkpoints'),
+))
 
 # Model parameters
 DEFAULT_IMAGE_SIZE = (224, 224)  # Input image size for CNN

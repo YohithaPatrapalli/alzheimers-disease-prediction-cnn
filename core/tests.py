@@ -1,7 +1,14 @@
+import os
+import tempfile
+
 from django.core import mail
-from django.contrib.auth.models import User
-from django.test import TestCase, override_settings
+from django.contrib.auth.models import AnonymousUser, User
+from django.http import Http404
+from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
+
+from prediction.models import Prediction
+from .views import private_media
 
 
 class PublicInformationPageTests(TestCase):
@@ -37,6 +44,42 @@ class PublicInformationPageTests(TestCase):
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].to, ['support@example.com'])
         self.assertIn('The contact page is working.', mail.outbox[0].body)
+
+
+class PrivateMediaTests(TestCase):
+    def test_prediction_image_is_only_served_to_its_owner(self):
+        owner = User.objects.create_user(username='image-owner', password='test-password')
+        other_user = User.objects.create_user(username='other-user', password='test-password')
+        prediction = Prediction.objects.create(
+            image='predictions/input/private-image.png',
+            predicted_stage='mild',
+            confidence=80,
+            confidence_scores={'mild': 80},
+            created_by=owner,
+        )
+
+        with tempfile.TemporaryDirectory() as media_root:
+            image_path = os.path.join(media_root, prediction.image.name)
+            os.makedirs(os.path.dirname(image_path))
+            with open(image_path, 'wb') as image_file:
+                image_file.write(b'private image bytes')
+
+            with override_settings(MEDIA_ROOT=media_root):
+                request = RequestFactory().get('/media/' + prediction.image.name)
+                request.user = owner
+                response = private_media(request, prediction.image.name)
+                self.assertEqual(b''.join(response.streaming_content), b'private image bytes')
+                self.assertEqual(response['Cache-Control'], 'private, no-store')
+                response.close()
+
+                request.user = other_user
+                with self.assertRaises(Http404):
+                    private_media(request, prediction.image.name)
+
+                request.user = AnonymousUser()
+                response = private_media(request, prediction.image.name)
+                self.assertEqual(response.status_code, 302)
+                self.assertIn('/accounts/login/', response['Location'])
 
 
 class LogoutTests(TestCase):

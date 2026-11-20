@@ -91,3 +91,9 @@ urlpatterns = [
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+else:
+    from core.views import private_media
+
+    urlpatterns += [
+        path('media/<path:path>', private_media, name='private_media'),
+    ]

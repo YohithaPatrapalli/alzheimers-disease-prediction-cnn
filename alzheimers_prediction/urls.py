@@ -2,7 +2,6 @@
 URL Configuration for alzheimers_prediction project.
 """
 
-from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
@@ -54,11 +53,8 @@ def home_view(request):
             <p>AI-powered early detection using Deep Learning CNN models</p>
             <p>Multi-stage classification: Non-Demented, Very Mild, Mild, Moderate</p>
             <div>
-                <a href="/admin/" class="btn">Admin Panel</a>
-                <a href="/prediction/static/" class="btn">Static Prediction</a>
+                <a href="/prediction/static/" class="btn">Start Prediction</a>
                 <a href="/prediction/dynamic/" class="btn">Dynamic Prediction (QR Code)</a>
-                <a href="/prediction/models/" class="btn">View Models</a>
-                <a href="/dataset/" class="btn">Datasets</a>
             </div>
             <p style="margin-top: 30px; font-size: 12px;">System is running!</p>
         </div>
@@ -67,11 +63,7 @@ def home_view(request):
     """)
 
 # Define URL patterns - INCLUDE ALL APP URLs
-from django.contrib.auth import views as auth_views
 urlpatterns = [
-    # Admin
-    path('admin/', admin.site.urls),
-    
     # Home page
     path('', home_view, name='home'),
     
@@ -83,8 +75,6 @@ urlpatterns = [
     
     # Include prediction app URLs  
     path('prediction/', include('prediction.urls')),
-
-    path('accounts/', include('django.contrib.auth.urls')),
 ]
 
 # Serve static and media files in development

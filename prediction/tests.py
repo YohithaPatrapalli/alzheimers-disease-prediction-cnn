@@ -4,6 +4,7 @@ import tempfile
 from datetime import timedelta
 from types import SimpleNamespace
 from unittest.mock import patch
+import qrcode
 
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -120,6 +121,26 @@ class StaticPredictionFlowTests(TestCase):
         Image.new('RGB', (120, 120), color='white').save(image_buffer, format='PNG')
         return SimpleUploadedFile('mri.png', image_buffer.getvalue(), content_type='image/png')
 
+    def test_scan_report_qr_returns_public_report_url(self):
+        report_url = 'http://127.0.0.1:8000/prediction/report/48/'
+        qr_buffer = io.BytesIO()
+        qrcode.make(report_url).save(qr_buffer, format='PNG')
+        qr_upload = SimpleUploadedFile(
+            'report-qr.png',
+            qr_buffer.getvalue(),
+            content_type='image/png',
+        )
+
+        response = self.client.post(
+            reverse('prediction:scan_qr_code'),
+            {'qr_image': qr_upload},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertTrue(payload['success'])
+        self.assertEqual(payload['data']['report_url'], report_url)
+
     def test_print_report_includes_qr_link_for_owner(self):
         prediction = Prediction.objects.create(
             image='predictions/input/print-report.png',
@@ -137,13 +158,13 @@ class StaticPredictionFlowTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Print Report')
         self.assertContains(response, 'Mild Demented')
-        self.assertContains(response, 'Login-protected report QR code')
+        self.assertContains(response, 'Public report QR code')
         prediction.refresh_from_db()
         self.assertIn(f'/prediction/report/{prediction.pk}/', prediction.qr_data)
         self.assertTrue(prediction.qr_code)
         self.assertTrue(os.path.exists(prediction.qr_code.path))
 
-    def test_print_report_requires_login_and_prediction_ownership(self):
+    def test_print_report_is_public(self):
         prediction = Prediction.objects.create(
             image='predictions/input/private-report.png',
             model=self.model,
@@ -153,15 +174,8 @@ class StaticPredictionFlowTests(TestCase):
             created_by=self.user,
         )
         report_url = reverse('prediction:print_report', args=[prediction.pk])
-        self.client.logout()
-
         anonymous_response = self.client.get(report_url)
-        self.assertEqual(anonymous_response.status_code, 302)
-
-        other_user = User.objects.create_user(username='other-viewer', password='test-password')
-        self.client.force_login(other_user)
-        other_user_response = self.client.get(report_url)
-        self.assertEqual(other_user_response.status_code, 404)
+        self.assertEqual(anonymous_response.status_code, 200)
 
     def test_model_details_render_auc_score(self):
         self.model.auc_score = 0.9

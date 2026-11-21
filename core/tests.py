@@ -72,28 +72,21 @@ class PrivateMediaTests(TestCase):
                 self.assertEqual(response['Cache-Control'], 'private, no-store')
                 response.close()
 
-                request.user = other_user
-                with self.assertRaises(Http404):
-                    private_media(request, prediction.image.name)
-
                 request.user = AnonymousUser()
                 response = private_media(request, prediction.image.name)
-                self.assertEqual(response.status_code, 302)
-                self.assertIn('/accounts/login/', response['Location'])
+                self.assertEqual(b''.join(response.streaming_content), b'private image bytes')
+                response.close()
 
 
-class LogoutTests(TestCase):
-    def setUp(self):
-        self.user = User.objects.create_user(username='logout-user', password='test-password')
-        self.client.force_login(self.user)
+class PublicOnlyRouteTests(TestCase):
+    def test_admin_and_login_routes_are_not_registered(self):
+        self.assertEqual(self.client.get('/admin/').status_code, 404)
+        self.assertEqual(self.client.get('/login/').status_code, 404)
 
-    def test_logout_link_submits_post_and_ends_the_session(self):
-        response = self.client.get(reverse('core:about'))
+    def test_static_prediction_is_public(self):
+        response = self.client.get(reverse('prediction:static_prediction'))
+        self.assertEqual(response.status_code, 200)
 
-        self.assertContains(response, reverse('core:logout'))
-        self.assertContains(response, 'csrfmiddlewaretoken')
-
-        response = self.client.post(reverse('core:logout'))
-
-        self.assertRedirects(response, reverse('home'))
-        self.assertNotIn('_auth_user_id', self.client.session)
+    def test_prediction_history_is_public(self):
+        response = self.client.get(reverse('prediction:history'))
+        self.assertEqual(response.status_code, 200)

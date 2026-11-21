@@ -45,7 +45,7 @@ from core.utils import create_activity_log
 
 
 def ensure_prediction_share_qr(prediction, request):
-    """Save a QR code that points to this owner's login-protected printable report."""
+    """Save a QR code that points to the public printable report."""
     share_url = request.build_absolute_uri(
         reverse('prediction:print_report', args=[prediction.pk])
     )
@@ -72,7 +72,7 @@ def ensure_prediction_share_qr(prediction, request):
 # QR Code Generation Views
 # ============================================================================
 
-class GenerateQRCodeView(LoginRequiredMixin, TemplateView):
+class GenerateQRCodeView(TemplateView):
     """Generate QR code from uploaded MRI image and make prediction"""
     template_name = 'prediction/generate_qr.html'
     
@@ -147,6 +147,9 @@ class GenerateQRCodeView(LoginRequiredMixin, TemplateView):
                     processing_time=0.5,
                     created_by=request.user if request.user.is_authenticated else None
                 )
+                if not request.session.session_key:
+                    request.session.create()
+                prediction.session_id = request.session.session_key
             else:
                 try:
                     # Load predictor
@@ -207,14 +210,14 @@ class GenerateQRCodeView(LoginRequiredMixin, TemplateView):
         return render(request, self.template_name, context)
 
 
-class QRResultView(LoginRequiredMixin, DetailView):
+class QRResultView(DetailView):
     """View QR code and prediction result"""
     model = Prediction
     template_name = 'prediction/qr_result.html'
     context_object_name = 'prediction'
     
     def get_queryset(self):
-        return Prediction.objects.filter(created_by=self.request.user)
+        return Prediction.objects.all()
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -286,7 +289,7 @@ class QRResultView(LoginRequiredMixin, DetailView):
 # Static Prediction Views
 # ============================================================================
 
-class StaticPredictionView(LoginRequiredMixin, TemplateView):
+class StaticPredictionView(TemplateView):
     """Static prediction - upload image and predict"""
     template_name = 'prediction/static_prediction.html'
     
@@ -297,9 +300,7 @@ class StaticPredictionView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['form'] = StaticPredictionForm()
-        context['recent_predictions'] = Prediction.objects.filter(
-            created_by=self.request.user
-        ).order_by('-created_at')[:5]
+        context['recent_predictions'] = Prediction.objects.none()
         context['best_model'] = get_best_model()
         context['title'] = 'Static Prediction'
         return context
@@ -367,6 +368,9 @@ class StaticPredictionView(LoginRequiredMixin, TemplateView):
                         processing_time=0.5,
                         created_by=request.user if request.user.is_authenticated else None
                     )
+                    if not request.session.session_key:
+                        request.session.create()
+                    prediction.session_id = request.session.session_key
                     
                     # Save original image
                     with open(tmp_path, 'rb') as f:
@@ -428,6 +432,9 @@ class StaticPredictionView(LoginRequiredMixin, TemplateView):
                     processing_time=result.processing_time,
                     created_by=request.user if request.user.is_authenticated else None
                 )
+                if not request.session.session_key:
+                    request.session.create()
+                prediction.session_id = request.session.session_key
                 
                 # Save original image
                 with open(tmp_path, 'rb') as f:
@@ -447,7 +454,7 @@ class StaticPredictionView(LoginRequiredMixin, TemplateView):
                 
                 # Log activity
                 create_activity_log(
-                    user=request.user,
+                    user=request.user if request.user.is_authenticated else None,
                     action='prediction',
                     description=f"Predicted: {prediction.get_predicted_stage_display()} ({prediction.confidence:.1f}%)",
                     request=request
@@ -473,14 +480,14 @@ class StaticPredictionView(LoginRequiredMixin, TemplateView):
         return render(request, self.template_name, context)
 
 
-class PredictionResultView(LoginRequiredMixin, DetailView):
+class PredictionResultView(DetailView):
     """View prediction result with image and chart"""
     model = Prediction
     template_name = 'prediction/result.html'
     context_object_name = 'prediction'
     
     def get_queryset(self):
-        return Prediction.objects.filter(created_by=self.request.user)
+        return Prediction.objects.all()
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -493,18 +500,13 @@ class PredictionResultView(LoginRequiredMixin, DetailView):
         image_data = self.request.session.get('prediction_image', None)
         
         # Get related predictions
-        context['related_predictions'] = Prediction.objects.filter(
-            created_by=self.request.user
-        ).exclude(id=prediction.id)[:3]
+        context['related_predictions'] = Prediction.objects.exclude(id=prediction.id)[:3]
         
         # Feedback form
         context['feedback_form'] = PredictionFeedbackForm()
         
         # Check if feedback exists
-        context['existing_feedback'] = PredictionFeedback.objects.filter(
-            prediction=prediction,
-            user=self.request.user
-        ).first()
+        context['existing_feedback'] = None
         
         # Add chart data and image data to context
         context['chart_data'] = chart_data
@@ -562,14 +564,14 @@ class PredictionResultView(LoginRequiredMixin, DetailView):
         return stage_info.get(stage, stage_info['non_demented'])
 
 
-class PredictionPrintReportView(LoginRequiredMixin, DetailView):
-    """Render a printable report and a QR link restricted to the prediction owner."""
+class PredictionPrintReportView(DetailView):
+    """Render a public printable prediction report and QR link."""
     model = Prediction
     template_name = 'prediction/print_report.html'
     context_object_name = 'prediction'
 
     def get_queryset(self):
-        return Prediction.objects.filter(created_by=self.request.user).select_related('model')
+        return Prediction.objects.all().select_related('model')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -582,7 +584,7 @@ class PredictionPrintReportView(LoginRequiredMixin, DetailView):
 # Dynamic Prediction Views (QR Code)
 # ============================================================================
 
-class DynamicPredictionView(LoginRequiredMixin, TemplateView):
+class DynamicPredictionView(TemplateView):
     """Dynamic prediction using QR codes"""
     template_name = 'prediction/dynamic_prediction.html'
     
@@ -618,7 +620,6 @@ class DynamicPredictionView(LoginRequiredMixin, TemplateView):
                     try:
                         prediction = Prediction.objects.get(
                             id=data['id'],
-                            created_by=request.user,
                         )
                         return redirect(f'/prediction/static/result/{prediction.id}/')
                     except Prediction.DoesNotExist:
@@ -643,11 +644,6 @@ def scan_qr_code(request):
     import json
     
     if request.method == 'POST':
-        if not request.user.is_authenticated:
-            return JsonResponse(
-                {'success': False, 'error': 'Log in to scan prediction QR codes.'},
-                status=401,
-            )
         if request.FILES.get('qr_image'):
             qr_image = request.FILES['qr_image']
             
@@ -684,7 +680,6 @@ def scan_qr_code(request):
                                 from .models import Prediction
                                 prediction = Prediction.objects.get(
                                     id=parsed_data['id'],
-                                    created_by=request.user,
                                 )
                                 from django.utils import timezone
 
@@ -708,6 +703,14 @@ def scan_qr_code(request):
                         
                         return JsonResponse({'success': True, 'data': parsed_data})
                     except json.JSONDecodeError:
+                        if data.startswith(('http://', 'https://')):
+                            return JsonResponse({
+                                'success': True,
+                                'data': {
+                                    'raw_data': data,
+                                    'report_url': data,
+                                },
+                            })
                         return JsonResponse({'success': True, 'data': {'raw_data': data}})
                 else:
                     return JsonResponse({'success': False, 'error': 'No QR code found in image'})
@@ -720,7 +723,6 @@ def scan_qr_code(request):
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
 
-@login_required
 def dynamic_result(request, data):
     """View dynamic prediction result from QR code"""
     try:
@@ -1132,7 +1134,7 @@ def batch_status(request, pk):
 # Prediction History Views
 # ============================================================================
 
-class PredictionHistoryView(LoginRequiredMixin, ListView):
+class PredictionHistoryView(ListView):
     """View prediction history"""
     model = Prediction
     template_name = 'prediction/history.html'
@@ -1140,7 +1142,11 @@ class PredictionHistoryView(LoginRequiredMixin, ListView):
     paginate_by = 20
     
     def get_queryset(self):
-        queryset = Prediction.objects.filter(created_by=self.request.user)
+        session_id = self.request.session.session_key
+        if not session_id:
+            self.request.session.create()
+            session_id = self.request.session.session_key
+        queryset = Prediction.objects.filter(session_id=session_id)
         
         # Apply filters
         self.filter_form = PredictionHistoryFilterForm(self.request.GET)
@@ -1173,7 +1179,7 @@ class PredictionHistoryView(LoginRequiredMixin, ListView):
         context['title'] = 'Prediction History'
         
         # Statistics
-        stats = calculate_prediction_statistics(user=self.request.user, days=None)
+        stats = calculate_prediction_statistics(session_id=self.request.session.session_key)
         context['statistics'] = stats
         
         return context
@@ -1183,7 +1189,11 @@ class HistoryDetailView(PredictionResultView):
     """View prediction history detail"""
     
     def get_queryset(self):
-        return Prediction.objects.filter(created_by=self.request.user)
+        session_id = self.request.session.session_key
+        if not session_id:
+            self.request.session.create()
+            session_id = self.request.session.session_key
+        return Prediction.objects.filter(session_id=session_id)
 
 
 @login_required

@@ -149,21 +149,9 @@
                     </div>
                 </div>
                 <div class="hero-buttons">
-                    {% if user.is_authenticated %}
-                        <a href="{% url 'prediction:static_prediction' %}" class="btn btn-light btn-lg me-3">
-                            <i class="fas fa-play me-2"></i>Start Prediction
-                        </a>
-                        <a href="{% url 'dataset_manager:upload' %}" class="btn btn-outline-light btn-lg">
-                            <i class="fas fa-upload me-2"></i>Upload Dataset
-                        </a>
-                    {% else %}
-                        <a href="{% url 'register' %}" class="btn btn-light btn-lg me-3">
-                            <i class="fas fa-user-plus me-2"></i>Get Started Free
-                        </a>
-                        <a href="{% url 'login' %}" class="btn btn-outline-light btn-lg">
-                            <i class="fas fa-sign-in-alt me-2"></i>Login
-                        </a>
-                    {% endif %}
+                    <a href="{% url 'prediction:static_prediction' %}" class="btn btn-light btn-lg me-3">
+                        <i class="fas fa-play me-2"></i>Start Prediction
+                    </a>
                 </div>
             </div>
             <div class="col-lg-6 animate__animated animate__fadeInRight" data-aos="fade-left">
@@ -457,16 +445,10 @@
 <section class="cta-section py-5 bg-gradient-primary text-white">
     <div class="container text-center py-5" data-aos="zoom-in">
         <h2 class="display-5 fw-bold mb-4">Ready to Get Started?</h2>
-        <p class="lead mb-4">Join thousands of healthcare professionals using our AI-powered prediction system.</p>
-        {% if user.is_authenticated %}
-            <a href="{% url 'prediction:static_prediction' %}" class="btn btn-light btn-lg px-5">
-                <i class="fas fa-play me-2"></i>Start Predicting
-            </a>
-        {% else %}
-            <a href="{% url 'register' %}" class="btn btn-light btn-lg px-5">
-                <i class="fas fa-user-plus me-2"></i>Create Free Account
-            </a>
-        {% endif %}
+        <p class="lead mb-4">Use our AI-powered prediction system to analyze MRI images.</p>
+        <a href="{% url 'prediction:static_prediction' %}" class="btn btn-light btn-lg px-5">
+            <i class="fas fa-play me-2"></i>Start Predicting
+        </a>
     </div>
 </section>
 

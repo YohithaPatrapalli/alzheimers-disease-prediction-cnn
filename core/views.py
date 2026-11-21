@@ -28,25 +28,9 @@ from .utils import (
 # from weasyprint import HTML  # <-- REMOVE THIS LINE
 
 
-@login_required
 def private_media(request, path):
-    """Serve only prediction images and avatars owned by the signed-in user."""
+    """Serve public demo media files after basic path validation."""
     if not path or '\\' in path or '..' in path.split('/'):
-        raise Http404
-
-    from django.db.models import Q
-    from prediction.models import Prediction
-
-    is_owned_prediction_file = Prediction.objects.filter(
-        created_by=request.user
-    ).filter(
-        Q(image=path) | Q(processed_image=path) | Q(qr_code=path)
-    ).exists()
-    is_own_avatar = UserProfile.objects.filter(
-        user=request.user,
-        avatar=path,
-    ).exists()
-    if not (is_owned_prediction_file or is_own_avatar):
         raise Http404
 
     try:

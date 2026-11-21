@@ -262,6 +262,18 @@
     function displayResult(data) {
         resultArea.style.display = 'block';
         noResultArea.style.display = 'none';
+
+        if (data.report_url) {
+            const url = data.report_url;
+            if (/^https?:\/\//i.test(url)) {
+                window.location.assign(url);
+                return;
+            }
+        }
+        if (data.raw_data && /^https?:\/\//i.test(data.raw_data)) {
+            window.location.assign(data.raw_data);
+            return;
+        }
         
         if (data.error) {
             resultArea.innerHTML = `
@@ -374,6 +386,20 @@
             </div>
         `;
         
+        if (typeof data === 'string' && /^https?:\/\//i.test(data)) {
+            window.location.assign(data);
+            return;
+        }
+
+        if (data.report_url) {
+            window.location.assign(data.report_url);
+            return;
+        }
+        if (data.raw_data && /^https?:\/\//i.test(data.raw_data)) {
+            window.location.assign(data.raw_data);
+            return;
+        }
+
         if (data.id) {
             // Fetch full prediction details
             fetch(`/api/prediction/${data.id}/`)
@@ -407,7 +433,12 @@
                     processQRCode(data);
                     stopScanner();
                 } catch (e) {
-                    displayResult({ error: 'Invalid QR code format' });
+                    if (/^https?:\/\//i.test(content)) {
+                        processQRCode(content);
+                    } else {
+                        displayResult({ error: 'Invalid QR code format' });
+                    }
+                    stopScanner();
                 }
             });
             

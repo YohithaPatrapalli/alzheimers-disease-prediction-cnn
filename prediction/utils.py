@@ -134,7 +134,7 @@ def generate_qr_code(data, size=10, border=4):
 
 
 def generate_prediction_qr(prediction, share_url=None, include_all_data=False):
-    """Generate a QR code containing only the login-protected report URL."""
+    """Generate a QR code containing only the public report URL."""
     if share_url is None:
         share_url = reverse('prediction:print_report', args=[prediction.pk])
     return generate_qr_code(share_url)
@@ -257,7 +257,7 @@ def get_best_model():
     return best_model
 
 
-def calculate_prediction_statistics(user=None, days=30):
+def calculate_prediction_statistics(user=None, session_id=None, days=30):
     """Calculate prediction statistics"""
     from .models import Prediction
     from django.db.models import Count, Avg
@@ -265,6 +265,8 @@ def calculate_prediction_statistics(user=None, days=30):
     queryset = Prediction.objects.all()
     if user:
         queryset = queryset.filter(created_by=user)
+    if session_id:
+        queryset = queryset.filter(session_id=session_id)
     
     if days:
         cutoff = datetime.now() - timedelta(days=days)

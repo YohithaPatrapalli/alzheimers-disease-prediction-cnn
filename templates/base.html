@@ -46,52 +46,12 @@
                         <a class="nav-link" href="/">Home</a>
                     </li>
                     
-                    {% if user.is_authenticated %}
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                                <i class="fas fa-database me-1"></i>Dataset
-                            </a>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="/dataset/">My Datasets</a></li>
-                                <li><a class="dropdown-item" href="/dataset/upload/">Upload Dataset</a></li>
-                            </ul>
-                        </li>
-                        
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                                <i class="fas fa-brain me-1"></i>Prediction
-                            </a>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="/prediction/static/">Static Prediction</a></li>
-                                <li><a class="dropdown-item" href="/prediction/dynamic/">Dynamic (QR Code)</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="/prediction/batch/">Batch Prediction</a></li>
-                                <li><a class="dropdown-item" href="/prediction/history/">Prediction History</a></li>
-                            </ul>
-                        </li>
-                        
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                                <i class="fas fa-qrcode me-1"></i>QR Code
-                            </a>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="/prediction/generate/">
-                                    <i class="fas fa-qrcode me-2"></i>Generate QR Code
-                                </a></li>
-                                <li><a class="dropdown-item" href="/prediction/dynamic/">
-                                    <i class="fas fa-camera me-2"></i>Scan QR Code
-                                </a></li>
-                            </ul>
-                        </li>
-                        
-                        <li class="nav-item">
-                            <a class="nav-link" href="/prediction/models/">Models</a>
-                        </li>
-                        
-                        <li class="nav-item">
-                            <a class="nav-link" href="/prediction/analytics/">Analytics</a>
-                        </li>
-                    {% endif %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="/prediction/static/">Prediction</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/prediction/dynamic/">Scan QR</a>
+                    </li>
                     
                     <li class="nav-item">
                         <a class="nav-link" href="/about/">About</a>
@@ -102,34 +62,6 @@
                 </ul>
                 
                 <ul class="navbar-nav ms-auto">
-                    {% if user.is_authenticated %}
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                                <i class="fas fa-user-circle fa-lg"></i>
-                                <span class="ms-1">{{ user.username }}</span>
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                <li><a class="dropdown-item" href="/dashboard/"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</a></li>
-                                <li><a class="dropdown-item" href="/profile/"><i class="fas fa-user me-2"></i>Profile</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <form method="post" action="{% url 'core:logout' %}">
-                                        {% csrf_token %}
-                                        <button type="submit" class="dropdown-item text-danger">
-                                            <i class="fas fa-sign-out-alt me-2"></i>Logout
-                                        </button>
-                                    </form>
-                                </li>
-                            </ul>
-                        </li>
-                    {% else %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="/login/">Login</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link btn btn-outline-light btn-sm px-3 ms-2" href="/register/">Register</a>
-                        </li>
-                    {% endif %}
                     
                     <!-- Dark Mode Toggle -->
                     <li class="nav-item ms-2">

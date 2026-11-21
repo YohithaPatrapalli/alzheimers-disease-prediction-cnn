@@ -19,5 +19,4 @@ urlpatterns = [
     path('dashboard/', dashboard, name='dashboard'),
     path('about/', views.about, name='about'),
     path('contact/', views.contact, name='contact'),
-    path('logout/', views.CustomLogoutView.as_view(), name='logout'),
 ]

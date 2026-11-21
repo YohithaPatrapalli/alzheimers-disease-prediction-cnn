@@ -132,12 +132,12 @@
         <section class="row mt-4 align-items-center">
             <div class="col-md-8">
                 <h2 class="h5">Open this report</h2>
-                <p class="mb-1">Scan the QR code and sign in as the account that owns this prediction.</p>
-                <p class="text-muted small mb-0">The QR code does not contain prediction details. Other accounts cannot access this report.</p>
+                <p class="mb-1">Scan the QR code to open this public printable report.</p>
+                <p class="text-muted small mb-0">The QR code contains only the report link.</p>
             </div>
             <div class="col-md-4 text-center">
                 {% if prediction.qr_code %}
-                <img src="{{ prediction.qr_code.url }}" alt="Login-protected report QR code" class="report-qr">
+                <img src="{{ prediction.qr_code.url }}" alt="Public report QR code" class="report-qr">
                 {% endif %}
             </div>
         </section>

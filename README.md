@@ -105,29 +105,24 @@ http://127.0.0.1:8000/
 
 ## Deploy to Render
 
-The repository includes a Render Blueprint (`render.yaml`) for a public HTTPS deployment.
-It uses a persistent disk for the SQLite database, uploaded files, and model files. The
-Blueprint uses a paid service plan and disk; review Render's current pricing before
-creating the service.
+The repository includes a Render Blueprint (`render.yaml`) for a public HTTPS demo using
+Render's Free web-service plan. Free services can spin down when idle, have limited
+memory, and use an ephemeral filesystem. The SQLite database, uploaded files, and model
+files can be lost whenever the service restarts, spins down, or redeploys. Do not upload
+real or sensitive MRI scans to this demo.
 
 1. Push this project to a GitHub repository you control.
 2. In Render, choose **New > Blueprint**, connect that repository, and apply the
-   `render.yaml` configuration.
-3. Wait for the first deployment, then open the service's Shell and run:
+   `render.yaml` configuration. Confirm that the service plan is **Free** before
+   creating it.
+3. Wait for the first deployment, then open the HTTPS `onrender.com` address shown on
+   the Render service page. The first request after idle may take about a minute while
+   the service starts.
+4. This repository does not include trained model weights. Live predictions will not
+   work until you provide a trained model, and the Free service may run out of memory
+   while loading TensorFlow or making predictions.
 
-   ```bash
-   python manage.py createsuperuser
-   ```
-
-4. In `/admin/`, add a Trained Model, set its status to completed, and upload the trained
-   model file. Then open the model page in the app and activate it for your account.
-   Model files, the local SQLite database, and the imported dataset are not included in
-   Git, so the deployed service starts with a new database.
-5. Share the HTTPS `onrender.com` address shown on the Render service page.
-
-Use the project only with MRI images you are authorized to handle. Uploaded scans and
-prediction history are sensitive; application media links require signing in as the
-account that owns the file. The model is experimental and is not for clinical diagnosis.
+The application is experimental and is not for clinical diagnosis.
 
 ## How to Use
 

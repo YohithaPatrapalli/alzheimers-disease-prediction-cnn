@@ -2,14 +2,10 @@ services:
   - type: web
     name: alzheimers-prediction
     runtime: python
-    plan: standard
+    plan: free
     buildCommand: pip install -r requirements.txt && python manage.py collectstatic --no-input
     startCommand: python manage.py migrate && gunicorn alzheimers_prediction.wsgi:application --bind 0.0.0.0:$PORT --workers 1 --timeout 120
     healthCheckPath: /
-    disk:
-      name: alzheimers-data
-      mountPath: /var/data
-      sizeGB: 10
     envVars:
       - key: PYTHON_VERSION
         value: 3.10.13
@@ -20,10 +16,10 @@ services:
       - key: ALLOWED_HOSTS
         value: localhost,127.0.0.1
       - key: DATABASE_PATH
-        value: /var/data/db.sqlite3
+        value: /tmp/db.sqlite3
       - key: MEDIA_ROOT
-        value: /var/data/media
+        value: /tmp/alzheimers-data/media
       - key: MODEL_DIRECTORY
-        value: /var/data/models
+        value: /tmp/alzheimers-data/models
       - key: CHECKPOINT_DIRECTORY
-        value: /var/data/checkpoints
+        value: /tmp/alzheimers-data/checkpoints
